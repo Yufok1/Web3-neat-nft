@@ -1,0 +1,39 @@
+# Core NEAT algorithm
+numpy>=1.24.0
+networkx>=3.0
+matplotlib>=3.6.0
+
+# Web3 and blockchain
+web3>=6.0.0
+eth-account>=0.9.0
+brownie-contracts>=1.7.0
+
+# Machine Learning and AI
+torch>=2.0.0
+tensorflow>=2.13.0
+scikit-learn>=1.3.0
+
+# Data handling
+pandas>=2.0.0
+h5py>=3.8.0
+pillow>=10.0.0
+
+# API and Web
+flask>=2.3.0
+fastapi>=0.100.0
+requests>=2.31.0
+
+# Development tools
+pytest>=7.4.0
+black>=23.0.0
+flake8>=6.0.0
+mypy>=1.5.0
+
+# Utilities
+python-dotenv>=1.0.0
+click>=8.1.0
+pyyaml>=6.0
+tqdm>=4.65.0
+
+# IPFS for metadata storage
+ipfshttpclient>=0.8.0a2

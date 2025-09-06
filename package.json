@@ -1,0 +1,32 @@
+{
+  "name": "web3-neat-nft",
+  "version": "1.0.0",
+  "description": "A Web3 NEAT (NeuroEvolution of Augmenting Topologies) system for breeding AI systems as NFTs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "compile": "hardhat compile",
+    "deploy": "hardhat run scripts/deploy.js",
+    "dev": "hardhat node"
+  },
+  "keywords": [
+    "web3",
+    "neat",
+    "neuroevolution",
+    "nft",
+    "ai",
+    "blockchain",
+    "ethereum"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "web3": "^4.0.0",
+    "ethers": "^6.0.0",
+    "@openzeppelin/contracts": "^5.0.0"
+  },
+  "devDependencies": {
+    "hardhat": "^2.19.0",
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0"
+  }
+}
