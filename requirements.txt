@@ -8,9 +8,7 @@ numpy>=1.24.0
 scipy>=1.10.0
 
 # CPU-Optimized Neural Training (NEAT Evolution)
-# PyTorch optional for advanced training capabilities
-# torch>=2.0.0  # Optional: For advanced neural network features
-# torchvision>=0.15.0  # Optional: For vision-based capabilities
+# NEAT uses CPU-optimized sequential processing for diverse network topologies
 
 # HuggingFace Datasets for Language Corpus
 datasets>=2.14.0
