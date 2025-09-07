@@ -1,29 +1,33 @@
-# Core NEAT algorithm
-numpy>=1.24.0
-networkx>=3.0
-matplotlib>=3.6.0
+# Constitutional NEAT Breeding System Dependencies
 
-# Web3 and blockchain
+# Core NEAT algorithm (neural evolution)
+neat-python>=0.92
+
+# Essential mathematical libraries
+numpy>=1.24.0
+scipy>=1.10.0
+
+# GPU Acceleration for Neural Training
+torch>=2.0.0
+torchvision>=0.15.0
+
+# HuggingFace Datasets for Language Corpus
+datasets>=2.14.0
+huggingface-hub>=0.16.0
+
+# Web3 and blockchain integration (FULLY IMPLEMENTED)
 web3>=6.0.0
 eth-account>=0.9.0
-brownie-contracts>=1.7.0
+ipfshttpclient>=0.8.0a2
 
-# Machine Learning and AI
-torch>=2.0.0
-tensorflow>=2.13.0
-scikit-learn>=1.3.0
+# Cryptographic identity and hashing
+# hashlib  # Built-in Python - for genome identity verification
 
-# Data handling
-pandas>=2.0.0
-h5py>=3.8.0
-pillow>=10.0.0
+# Data handling for constitutional traits
+# dataclasses  # Built-in Python 3.7+ - for immutable genome structures
+# json  # Built-in Python - for canonical serialization
 
-# API and Web
-flask>=2.3.0
-fastapi>=0.100.0
-requests>=2.31.0
-
-# Development tools
+# Development and testing tools
 pytest>=7.4.0
 black>=23.0.0
 flake8>=6.0.0
@@ -31,9 +35,18 @@ mypy>=1.5.0
 
 # Utilities
 python-dotenv>=1.0.0
-click>=8.1.0
-pyyaml>=6.0
 tqdm>=4.65.0
+requests>=2.31.0
 
-# IPFS for metadata storage
-ipfshttpclient>=0.8.0a2
+# Optional: Enhanced AI/ML capabilities
+# tensorflow>=2.13.0
+# scikit-learn>=1.3.0
+
+# Optional: Web API and visualization
+# flask>=2.3.0
+# matplotlib>=3.6.0
+# networkx>=3.0
+
+# Optional: Advanced data handling
+# pandas>=2.0.0
+# h5py>=3.8.0

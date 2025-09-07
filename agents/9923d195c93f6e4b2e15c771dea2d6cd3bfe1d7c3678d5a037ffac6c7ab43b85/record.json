@@ -1,0 +1,39 @@
+{
+  "agent_id": "9923d195c93f6e4b2e15c771dea2d6cd3bfe1d7c3678d5a037ffac6c7ab43b85",
+  "genome_hash": "994e9ac88c91109b6dbfa51b64c418df83f5a369f47cb645a2995e48985a0469",
+  "creation_date": "2025-09-06T22:16:17.893297",
+  "lineage": {},
+  "notes": "Trained in base with fitness 0.811",
+  "visual_dna": "#CD40E9",
+  "personality_traits": {
+    "Perception": "7.75",
+    "WorkingMemory": "Moderate",
+    "Expertise": "1.44",
+    "LearningRate": "0.50",
+    "TransferLearning": "0.57",
+    "AttentionSpan": "6.27",
+    "RiskTolerance": "0.96",
+    "InnovationDrive": "1.77",
+    "ProcessingSpeed": "1.63",
+    "Stability": "2.67",
+    "EnergyEfficiency": "0.98",
+    "SocialDrive": "2.08",
+    "CommunicationStyle": "Balanced",
+    "MetaLearning": "1.46",
+    "Curiosity": "2.19"
+  },
+  "capabilities": {
+    "base": {
+      "capability_type": "base",
+      "training_generations": 0,
+      "final_fitness": 0.811,
+      "training_date": "2025-09-06T22:16:17.893285",
+      "sample_outputs": {},
+      "performance_metrics": {
+        "final_fitness": 0.811,
+        "vocabulary_size": 0
+      },
+      "training_config": {}
+    }
+  }
+}

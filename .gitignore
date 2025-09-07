@@ -99,3 +99,17 @@ coverage.xml
 *.joblib
 models/checkpoints/
 experiments/logs/
+
+# Constitutional NEAT specific
+neat_config.txt
+neat_config_*.txt
+evolved_networks/
+breeding_logs/
+constitutional_ai/__pycache__/
+*.network
+*.genome
+*.population
+
+# Legacy directories (preserved but not tracked)
+neat_old/
+constitutional_neat/

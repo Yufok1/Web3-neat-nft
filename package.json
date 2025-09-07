@@ -1,22 +1,36 @@
 {
-  "name": "web3-neat-nft",
+  "name": "constitutional-neat-breeding",
   "version": "1.0.0",
-  "description": "A Web3 NEAT (NeuroEvolution of Augmenting Topologies) system for breeding AI systems as NFTs",
+  "description": "Revolutionary Constitutional NEAT Breeding System - Evolves complete AI agents through constitutional genetics and neural evolution as unique NFTs",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "npx hardhat test",
     "compile": "hardhat compile",
     "deploy": "hardhat run scripts/deploy.js",
-    "dev": "hardhat node"
+    "deploy:testnet": "hardhat run scripts/deploy.js --network goerli",
+    "deploy:mainnet": "hardhat run scripts/deploy.js --network mainnet",
+    "verify": "hardhat verify",
+    "clean": "hardhat clean",
+    "node": "hardhat node",
+    "console": "hardhat console"
   },
   "keywords": [
-    "web3",
+    "constitutional-ai",
     "neat",
     "neuroevolution",
     "nft",
-    "ai",
+    "artificial-life",
     "blockchain",
-    "ethereum"
+    "ethereum",
+    "diploid-genetics",
+    "fixed-points",
+    "genetic-algorithms",
+    "stabilization-types",
+    "visual-dna",
+    "immutable-identity",
+    "gpu-acceleration",
+    "language-corpus",
+    "huggingface-integration"
   ],
   "author": "",
   "license": "MIT",
@@ -27,6 +41,11 @@
   },
   "devDependencies": {
     "hardhat": "^2.19.0",
-    "@nomicfoundation/hardhat-toolbox": "^4.0.0"
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "@nomicfoundation/hardhat-ethers": "^3.0.0",
+    "@nomiclabs/hardhat-etherscan": "^3.1.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
   }
 }
