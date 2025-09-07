@@ -29,10 +29,11 @@ This isn't just another AI project - it's the **world's first constitutional mul
 - **Multi-Source Support**: Wikipedia, OpenWebText, BookCorpus with intelligent fallbacks
 - **Smart Caching**: Downloads once, caches locally for fast reuse across training sessions
 
-### GPU Acceleration
-- **PyTorch Integration**: GPU-accelerated neural network training within NEAT evolution
-- **Batch Processing**: 32-sample batches for efficient GPU utilization on GTX 1660 SUPER+
-- **Memory Management**: Automatic GPU detection with CPU fallback
+### CPU-Optimized Training
+- **NEAT-Optimized**: CPU training specifically designed for NeuroEvolution of Augmenting Topologies
+- **Flexible Architecture**: Each neural network can have different topologies (not possible with GPU batching)
+- **Sequential Processing**: Evolutionary algorithms work best with CPU's flexible processing
+- **Memory Efficient**: No GPU memory transfer overhead for diverse network structures
 - **Mixed Precision**: Optional FP16 training for faster convergence
 
 ### Logic Test Battery
@@ -230,26 +231,25 @@ print(f"Training on {len(corpus):,} characters of real text")
 - **Smart Caching**: Downloads once, reuses across training sessions
 - **Multi-Source**: Automatic fallback between different datasets
 
-### GPU Acceleration
+### CPU-Optimized Training
 
-Training leverages PyTorch GPU acceleration for faster evolution:
+Training leverages CPU optimization specifically designed for NEAT evolution:
 
 ```python
-from constitutional_ai.gpu_training import GPUTrainingAccelerator
+from constitutional_ai.training.language_evolution import train_agent_language_capability
 
-# Automatic GPU detection with CPU fallback
-accelerator = GPUTrainingAccelerator()
-print(f"Using device: {accelerator.device}")  # 'cuda' or 'cpu'
+# CPU training (optimal for NEAT) - default behavior
+result = train_agent_language_capability(agent_identity, generations=10, use_cpu=True)
 
-# Batch processing for efficient GPU utilization
-# 32-sample batches on GTX 1660 SUPER+ GPUs
+# GPU training (legacy, not recommended for NEAT)
+result = train_agent_language_capability(agent_identity, generations=10, use_cpu=False)
 ```
 
-**GPU Features:**
-- **Automatic Detection**: CUDA GPUs with CPU fallback
-- **Batch Processing**: 32+ samples per batch for efficiency
-- **Memory Management**: Smart GPU memory allocation
-- **Mixed Precision**: Optional FP16 for faster training
+**CPU Features:**
+- **NEAT-Optimized**: Sequential processing ideal for diverse network topologies
+- **Flexible Architecture**: Each neural network can have different structures
+- **Memory Efficient**: No GPU memory transfer overhead
+- **Automatic Detection**: CPU by default with GPU fallback available
 
 ### Language Capability
 Agents learn text generation through character-level prediction:
@@ -316,7 +316,7 @@ python logic_tests.py 31fdce95 --max-level 3
 - **Progressive Difficulty**: From simple XOR to complex parity problems
 - **Mathematical Proof**: Validates actual learning vs. memorization
 - **Trait Analysis**: How constitutional traits affect learning different logic
-- **GPU Acceleration**: Fast batch processing for large populations
+- **CPU Optimization**: Sequential processing optimal for NEAT evolution
 
 ### Logic Test Results
 
@@ -506,7 +506,7 @@ MIT License - see [LICENSE](LICENSE) file for details.
 - ✅ **8+ Active Trained Agents**: Ready for breeding and evolution
 - ✅ **Proven Learning Capability**: Agents demonstrably improve through training
 - ✅ **Complete Breeding Pipeline**: Fixed and thoroughly tested
-- ✅ **GPU Acceleration**: CUDA training with PyTorch integration working
+- ✅ **CPU-Optimized Training**: NEAT evolution specifically designed for CPU processing
 - ✅ **Agent Persistence**: Full save/load functionality operational
 - ✅ **Mathematical Rigor**: All core algorithms proven and convergent
 

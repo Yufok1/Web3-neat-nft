@@ -12,10 +12,8 @@ Supports multi-megabyte training corpora for serious AI evolution.
 
 import os
 import json
-import requests
-from typing import Dict, List, Tuple, Optional, Any
+from typing import Dict, List
 from dataclasses import dataclass
-import logging
 
 try:
     from datasets import load_dataset
@@ -23,13 +21,6 @@ try:
     HF_AVAILABLE = True
 except ImportError:
     HF_AVAILABLE = False
-
-try:
-    import nltk
-
-    NLTK_AVAILABLE = True
-except ImportError:
-    NLTK_AVAILABLE = False
 
 
 @dataclass
@@ -135,7 +126,8 @@ class LanguageCorpusLoader:
 
                             if doc_count % 50 == 0:
                                 print(
-                                    f"Processed {doc_count} documents, {len(corpus_text):,} characters"
+                                    f"Processed {doc_count} documents, {
+                                        len(corpus_text):,} characters"
                                 )
 
                     if len(corpus_text) > 10000:  # Got substantial data
@@ -144,7 +136,8 @@ class LanguageCorpusLoader:
                             f.write(corpus_text)
 
                         print(
-                            f"{dataset_name} corpus loaded: {len(corpus_text):,} characters, {doc_count} documents"
+                            f"{dataset_name} corpus loaded: {
+                                len(corpus_text):,} characters, {doc_count} documents"
                         )
                         return corpus_text
 
@@ -228,7 +221,8 @@ class LanguageCorpusLoader:
                             f.write(corpus_text)
 
                         print(
-                            f"OpenWebText corpus loaded: {len(corpus_text):,} characters, {doc_count} documents"
+                            f"OpenWebText corpus loaded: {
+                                len(corpus_text):,} characters, {doc_count} documents"
                         )
                         return corpus_text
 
@@ -307,7 +301,8 @@ class LanguageCorpusLoader:
                             f.write(corpus_text)
 
                         print(
-                            f"Books corpus loaded from {dataset_name}: {len(corpus_text):,} characters"
+                            f"Books corpus loaded from {dataset_name}: {
+                                len(corpus_text):,} characters"
                         )
                         return corpus_text
 
@@ -329,50 +324,50 @@ class LanguageCorpusLoader:
             The art of language emerges through practice and evolution. Each word carries meaning, each sentence builds understanding.
             Language learning requires exposure to diverse texts, from literature to science, from poetry to technical documentation.
             Through repetition and variation, patterns emerge that enable communication and expression.
-            
+
             Constitutional AI agents develop language capabilities through evolutionary pressure, selecting for coherence, creativity, and precision.
             Each agent's traits influence their learning style - some favor technical precision, others creative expression.
-            
+
             The relationship between mind and language reflects deeper patterns of intelligence, whether biological or artificial.
             Through training and selection, simple networks learn complex linguistic behaviors.
             """,
             """
             Words flow like water, finding their path through the landscape of meaning. Grammar provides structure while creativity provides life.
             The dance between rules and exceptions creates the rich tapestry of human communication.
-            
+
             In the realm of artificial minds, language becomes a bridge between internal states and external expression.
             Each generation builds upon the last, refining capability through constitutional evolution.
-            
+
             Text generation requires understanding not just words but contexts, implications, and subtle meanings.
             The best language models capture not just patterns but the essence of communication itself.
             """,
             """
             Through diverse training data, agents learn to navigate the complexity of human language with increasing sophistication.
             From simple character prediction to complex reasoning, the journey of language learning mirrors the evolution of intelligence.
-            
+
             Neural networks evolve through generations, each iteration improving upon the last through careful selection and breeding.
             The constitutional framework provides the genetic foundation for this evolution, encoding traits that shape learning behavior.
-            
+
             Machine learning combines statistical pattern recognition with evolutionary principles to create intelligent systems.
             Each training example contributes to the network's understanding, building knowledge incrementally over time.
             """,
             """
             Programming languages provide the syntax and semantics for instructing computers to perform complex tasks.
             From assembly language to high-level abstractions, each generation of programming tools builds upon previous innovations.
-            
+
             Software engineering principles guide the development of robust, maintainable, and efficient computer programs.
             Design patterns capture proven solutions to common programming problems, enabling reuse and consistency.
-            
+
             Algorithms form the foundation of computer science, providing systematic methods for solving computational problems.
             Data structures organize information in ways that enable efficient access, manipulation, and storage.
             """,
             """
             Scientific inquiry follows systematic methods to understand natural phenomena and develop technological innovations.
             The scientific method involves observation, hypothesis formation, experimentation, and theory development.
-            
+
             Mathematics provides the language of science, offering precise tools for modeling physical reality.
             Statistical analysis enables researchers to draw meaningful conclusions from experimental data.
-            
+
             Technology advances through iterative improvement, with each innovation building upon previous discoveries.
             Interdisciplinary collaboration accelerates progress by combining insights from diverse fields of study.
             """,
@@ -415,21 +410,23 @@ class LanguageCorpusLoader:
             web_corpus = self.load_openwebtext_corpus()
             if len(web_corpus) > 10000:
                 corpora.append(web_corpus[: self.config.language_corpus_size // 3])
-        except:
+        except BaseException:
             pass
 
         try:
             books_corpus = self.load_books_corpus()
             if len(books_corpus) > 10000:
                 corpora.append(books_corpus[: self.config.language_corpus_size // 3])
-        except:
+        except BaseException:
             pass
 
         # Combine all corpora
         if corpora:
             mixed_corpus = "\n\n".join(corpora)
             print(
-                f"Mixed corpus created: {len(mixed_corpus):,} characters from {len(corpora)} sources"
+                f"Mixed corpus created: {
+                    len(mixed_corpus):,} characters from {
+                    len(corpora)} sources"
             )
             return mixed_corpus
         else:
@@ -512,7 +509,7 @@ class CodingCorpusLoader:
                                     func_line.split("(")[0].replace("def ", "").strip()
                                 )
                                 input_desc = f"function {func_name}"
-                            except:
+                            except BaseException:
                                 input_desc = "python function"
 
                         code_sample = {
@@ -530,7 +527,8 @@ class CodingCorpusLoader:
 
                         if sample_count % 100 == 0:
                             print(
-                                f"Collected {sample_count} Python functions, {total_size:,} characters"
+                                f"Collected {sample_count} Python functions, {
+                                    total_size:,} characters"
                             )
 
                 if len(code_samples) > 10:  # Got some data
@@ -539,7 +537,8 @@ class CodingCorpusLoader:
                         json.dump(code_samples, f)
 
                     print(
-                        f"Python code corpus loaded from {dataset_name}: {sample_count} functions, {total_size:,} characters"
+                        f"Python code corpus loaded from {dataset_name}: {sample_count} functions, {
+                            total_size:,} characters"
                     )
                     return code_samples
 

@@ -15,7 +15,6 @@ Constitutional traits influence:
 """
 
 import random
-import numpy as np
 import neat
 from typing import Dict, List, Tuple, Any, Optional
 from dataclasses import dataclass
@@ -71,7 +70,7 @@ class LanguageTrainingData(TrainingData):
             start = random.randint(0, len(text_ints) - self.sequence_length - 1)
 
             # Input sequence
-            input_seq = text_ints[start : start + self.sequence_length]
+            input_seq = text_ints[start: start + self.sequence_length]
 
             # Target (next character)
             target = text_ints[start + self.sequence_length]
@@ -333,7 +332,7 @@ class LanguageTrainingPipeline(CapabilityTrainingPipeline):
                     # Assign fitness
                     genome.fitness = fitness
 
-                except Exception as e:
+                except Exception:
                     # Handle network creation/evaluation errors
                     genome.fitness = 0.0
 
@@ -354,13 +353,15 @@ class LanguageTrainingPipeline(CapabilityTrainingPipeline):
         )
         print(f"Training corpus: {len(self.training_data.text)} characters")
         print(f"Vocabulary size: {self.training_data.vocab_size}")
-        print(f"Constitutional traits influencing training:")
-        print(
-            f"  - Innovation Drive: {self.agent_identity.constitution_result.constitution.get('Innovation_Drive', 'N/A')}"
+        print("Constitutional traits influencing training:")
+        innovation = self.agent_identity.constitution_result.constitution.get(
+            "Innovation_Drive", "N/A"
         )
-        print(
-            f"  - Curiosity: {self.agent_identity.constitution_result.constitution.get('Curiosity', 'N/A')}"
+        curiosity = self.agent_identity.constitution_result.constitution.get(
+            "Curiosity", "N/A"
         )
+        print(f"  - Innovation Drive: {innovation}")
+        print(f"  - Curiosity: {curiosity}")
         print(
             f"  - Learning Rate: {self.agent_identity.constitution_result.constitution.get('Learning_Rate', 'N/A')}"
         )
@@ -461,7 +462,6 @@ def train_agent_language_capability(
     agent_identity: IdentityBundle,
     training_text: Optional[str] = None,
     generations: int = 30,
-    use_gpu: bool = True,
 ) -> Dict[str, Any]:
     """
     Convenience function to train an agent's language capability.
@@ -470,7 +470,6 @@ def train_agent_language_capability(
         agent_identity: Constitutional agent to train
         training_text: Text corpus (uses default if None)
         generations: Training generations
-        use_gpu: Use GPU acceleration if available
 
     Returns:
         Training results
@@ -480,36 +479,6 @@ def train_agent_language_capability(
 
     pipeline = LanguageTrainingPipeline(training_text, agent_identity)
 
-    # Use GPU acceleration if requested and available
-    if use_gpu:
-        try:
-            from ..gpu_training import accelerate_agent_training
-
-            print("Using GPU acceleration for language training...")
-            result = accelerate_agent_training(
-                agent_identity,
-                pipeline.training_data,
-                pipeline.fitness_evaluator,
-                generations,
-                batch_size=32,
-            )
-
-            # Add language-specific metadata
-            result.update(
-                {
-                    "capability_type": "language",
-                    "corpus_size": len(training_text),
-                    "vocabulary_size": pipeline.training_data.vocab_size,
-                }
-            )
-
-            return result
-
-        except ImportError:
-            print("GPU training not available, using CPU...")
-        except Exception as e:
-            print(f"GPU training failed ({e}), falling back to CPU...")
-
-    # Fallback to CPU training
-    print("Using CPU training for language capability...")
+    # Use CPU training (optimal for NEAT evolution)
+    print("🧠 Using CPU training (optimal for NEAT)...")
     return pipeline.train_language_capability(generations)

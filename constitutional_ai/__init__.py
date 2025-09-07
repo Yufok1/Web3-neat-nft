@@ -20,9 +20,9 @@ from .emergent_constitution import create_emergent_agent_identity
 __version__ = "1.0.0"
 __all__ = [
     "ConstitutionalGenome",
-    "create_random_genome", 
+    "create_random_genome",
     "COMPLETE_TRAIT_DEFINITIONS",
     "ConstitutionalBreeder",
     "create_agent_identity",
-    "create_emergent_agent_identity"
+    "create_emergent_agent_identity",
 ]

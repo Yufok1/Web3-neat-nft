@@ -10,7 +10,6 @@ from typing import Dict, Any, Optional, Callable
 
 from .genome import ConstitutionalGenome
 from .identity import create_agent_identity, IdentityBundle
-from .neat_mapper import map_traits_to_neat_config
 
 
 class ConstitutionalNEATRunner:
@@ -57,7 +56,7 @@ activation_default      = {self.neat_config.activation_function}
 activation_mutate_rate  = 0.1
 activation_options      = tanh sigmoid relu
 
-# node aggregation options  
+# node aggregation options
 aggregation_default     = sum
 aggregation_mutate_rate = 0.0
 aggregation_options     = sum
