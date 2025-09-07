@@ -28,7 +28,7 @@
     "stabilization-types",
     "visual-dna",
     "immutable-identity",
-    "gpu-acceleration",
+    "cpu-optimized",
     "language-corpus",
     "huggingface-integration"
   ],

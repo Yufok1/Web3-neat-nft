@@ -7,9 +7,10 @@ neat-python>=0.92
 numpy>=1.24.0
 scipy>=1.10.0
 
-# GPU Acceleration for Neural Training
-torch>=2.0.0
-torchvision>=0.15.0
+# CPU-Optimized Neural Training (NEAT Evolution)
+# PyTorch optional for advanced training capabilities
+# torch>=2.0.0  # Optional: For advanced neural network features
+# torchvision>=0.15.0  # Optional: For vision-based capabilities
 
 # HuggingFace Datasets for Language Corpus
 datasets>=2.14.0

@@ -12,7 +12,7 @@ This is the **world's first constitutional multi-capability AI breeding system**
 - **Emergent Constitution**: Fixed-point trait resolution with mathematical convergence guarantees
 - **Multi-Capability Learning**: Agents learn real skills (language, coding) through evolution
 - **Language Corpus Integration**: HuggingFace datasets with real text training data
-- **GPU Acceleration**: PyTorch-powered neural training with CUDA support
+- **CPU-Optimized Training**: NEAT evolution specifically designed for CPU processing
 - **Logic Test Battery**: Progressive difficulty testing to benchmark agent capabilities
 - **Cross-Generation Breeding**: Combine successful agents with genetic inheritance
 - **Complete AI Coverage**: 15 comprehensive traits covering all aspects of AI behavior
@@ -27,7 +27,7 @@ This is the **world's first constitutional multi-capability AI breeding system**
 - NEAT neural evolution integration ✅
 - Multi-capability training (language, coding) ✅
 - Language corpus integration (HuggingFace) ✅
-- GPU acceleration (PyTorch/CUDA) ✅
+- CPU-optimized training (NEAT-specific) ✅
 - Logic test battery (6 difficulty levels) ✅
 - Cross-run breeding and agent persistence ✅
 - Visual DNA and identity generation ✅
@@ -185,7 +185,7 @@ constitutional_ai/          # Main system (NOT the old neat/ directory)
 ├── neat_mapper.py         # Trait → NEAT parameter mapping
 ├── neat_integration.py    # Bridge to neat-python
 ├── corpus_loader.py       # HuggingFace language corpus integration
-├── gpu_training.py        # PyTorch GPU acceleration for training
+├── training/              # CPU-optimized training modules
 ├── color_mapping_simple.py # Visual DNA generation
 ├── persistence.py         # Agent save/load system
 └── training/              # Multi-capability training modules
@@ -228,13 +228,13 @@ python -c "from constitutional_ai.emergent_constitution import create_emergent_a
 python -c "from constitutional_ai.neat_integration import breed_and_evolve_agents; from constitutional_ai import create_random_genome, COMPLETE_TRAIT_DEFINITIONS; import neat; def fitness(genomes, config): [setattr(g, 'fitness', 1.0) for _, g in genomes]; p1, p2 = [create_random_genome(COMPLETE_TRAIT_DEFINITIONS, seed=s) for s in [1, 2]]; result = breed_and_evolve_agents(p1, p2, fitness, 3, 2); print(f'Breeding pipeline: {result[\"identity\"].id_hash[:12]}...'); result['neat_runner'].cleanup()"
 ```
 
-### For Corpus and GPU Development
+### For Corpus and CPU Training Development
 ```bash
 # Test language corpus loading
 python -c "from constitutional_ai.corpus_loader import get_language_corpus; corpus = get_language_corpus(100_000); print(f'Loaded {len(corpus):,} characters of training text')"
 
-# Test GPU acceleration
-python -c "from constitutional_ai.gpu_training import GPUTrainingAccelerator; accel = GPUTrainingAccelerator(); print(f'GPU available: {accel.device}')"
+# Test CPU training optimization
+python -c "from constitutional_ai.training.language_evolution import train_agent_language_capability; print('CPU training module loaded successfully')"
 
 # Test logic test battery
 python -c "from logic_tests import LogicTestSuite; suite = LogicTestSuite(); print(f'Available tests: {len(suite.get_all_tests())} levels')"
@@ -303,7 +303,7 @@ python -c "from constitutional_ai.genome import StabilizationType, create_random
 ✅ **XOR Learning**: 4/4 patterns correct in 2-3 generations
 ✅ **Logic Test Battery**: 6 difficulty levels mastered by top agents
 ✅ **Language Corpus**: 1MB+ real text data from HuggingFace
-✅ **GPU Acceleration**: PyTorch/CUDA batch processing working
+✅ **CPU-Optimized Training**: NEAT evolution designed for CPU processing
 ✅ **Population Scaling**: 50-2000+ agents (trait-derived)
 ✅ **Trait Diversity**: All 6 stabilization types active
 ✅ **Identity Verification**: Cryptographic hashes consistent
@@ -386,7 +386,7 @@ npm test
 This Constitutional NEAT Breeding System is a **complete, working, revolutionary AI evolution platform** with cutting-edge capabilities:
 
 - **Real Language Training**: HuggingFace corpus integration for authentic text learning
-- **GPU Acceleration**: PyTorch-powered neural training with CUDA support  
+- **CPU-Optimized Training**: NEAT evolution specifically designed for CPU processing  
 - **Logic Benchmarking**: Progressive difficulty tests proving actual learning
 - **Web3 Integration**: Full NFT minting pipeline for evolved AI agents
 - **Functional Breeding**: Complete agent crossover and training pipeline working
@@ -399,7 +399,7 @@ It's not just a concept - it actually works and learns. The key insight is that 
 - ✅ Breeding functionality completely fixed and tested  
 - ✅ Unicode display issues resolved
 - ✅ Agent persistence working correctly
-- ✅ GPU training with CUDA acceleration active
+- ✅ CPU-optimized training specifically designed for NEAT evolution
 - ✅ Ready for large-scale agent evolution
 
 **For Claude Code**: This system represents a breakthrough in AI evolution - constitutional genetics combined with neural evolution, with mathematical guarantees and proven learning capability.
