@@ -181,6 +181,7 @@ survival_threshold = {survival_rate}
         generations: int = 100,
         num_inputs: int = 4,
         num_outputs: int = 2,
+        governance_decisions: Optional[Dict[str, Any]] = None,
     ) -> Any:
         """
         Evolve neural networks using NEAT with constitutional configuration.
@@ -190,11 +191,17 @@ survival_threshold = {survival_rate}
             generations: Number of generations to evolve
             num_inputs: Number of input nodes
             num_outputs: Number of output nodes
+            governance_decisions: Optional governance decisions to influence evolution
 
         Returns:
             Best evolved genome
         """
-        if not self.config_file:
+        # Apply governance decisions to NEAT configuration if provided
+        if governance_decisions:
+            print("🏛️  Applying governance decisions to NEAT evolution...")
+            # Recreate config with governance-influenced parameters
+            self._apply_governance_to_neat_config(governance_decisions)
+        elif not self.config_file:
             self.create_neat_config_file()
 
         # Update config file with correct input/output counts
@@ -238,6 +245,35 @@ survival_threshold = {survival_rate}
 
         with open(self.config_file, "w") as f:
             f.write(content)
+
+    def _apply_governance_to_neat_config(self, governance_decisions: Dict[str, Any]):
+        """Apply governance decisions to create a new NEAT config file with modified parameters."""
+        from .neat_mapper import TraitToNEATMapper
+        
+        # Create governance-influenced mapper
+        governance_mapper = TraitToNEATMapper(governance_decisions)
+        
+        # Get constitutional traits from identity
+        traits = self.identity.constitution_result.constitution
+        
+        # Generate governance-influenced NEAT config
+        governance_neat_config = governance_mapper.map_traits_to_neat_config(traits)
+        
+        print(f"  📊 Governance-modified parameters:")
+        print(f"     Population size: {governance_neat_config.population_size}")
+        print(f"     Mutation rate: {governance_neat_config.weight_mutation_rate:.3f}")
+        print(f"     Add node rate: {governance_neat_config.add_node_rate:.3f}")
+        
+        # Create config file with governance parameters
+        config_params = {
+            "pop_size": governance_neat_config.population_size,
+            "weight_mutate_rate": governance_neat_config.weight_mutation_rate,
+            "node_add_prob": governance_neat_config.add_node_rate,
+            "conn_add_prob": governance_neat_config.add_connection_rate,
+        }
+        
+        # Recreate config file with governance-influenced parameters
+        self.create_neat_config_file("neat_config_governed.txt", config_params)
 
     def create_network(self) -> Any:
         """Create a neural network from the best evolved genome."""
@@ -298,6 +334,7 @@ def evolve_constitutional_agent(
     num_inputs: int = 4,
     num_outputs: int = 2,
     seed_closure: Optional[int] = None,
+    governance_decisions: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """
     Complete pipeline: constitutional genome -> NEAT evolution -> trained agent.
@@ -312,6 +349,7 @@ def evolve_constitutional_agent(
         num_inputs: Number of network inputs
         num_outputs: Number of network outputs
         seed_closure: Seed for constitutional resolution
+        governance_decisions: Optional governance decisions to influence evolution
 
     Returns:
         Dictionary with evolved agent and metadata
@@ -322,9 +360,9 @@ def evolve_constitutional_agent(
     # Step 2: Create NEAT runner with constitutional configuration
     neat_runner = ConstitutionalNEATRunner(identity)
 
-    # Step 3: Evolve neural network using constitutional parameters
+    # Step 3: Evolve neural network using constitutional parameters (with governance)
     best_genome = neat_runner.evolve(
-        fitness_function, generations, num_inputs, num_outputs
+        fitness_function, generations, num_inputs, num_outputs, governance_decisions
     )
 
     # Step 4: Create trained network

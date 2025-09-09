@@ -2,9 +2,8 @@
 """
 Constitutional Agent Browser - Interactive Multi-Capability AI Management
 
-A comprehensive CLI for managing, training, testing, and breeding
-constitutional AI agents. Supports multiple capabilities (language, coding)
-with cross-generational evolution.
+A comprehensive CLI for managing, training, testing, and breeding constitutional AI agents.
+Supports multiple capabilities (language, coding) with cross-generational evolution.
 
 Features:
 - Agent persistence and loading
@@ -21,7 +20,7 @@ Usage Examples:
 """
 
 import argparse
-from typing import List, Tuple, Optional
+from typing import Optional, List
 from constitutional_ai.persistence import (
     load_agent,
     list_all_agents,
@@ -33,6 +32,7 @@ from constitutional_ai.training.language_evolution import (
     train_agent_language_capability,
 )
 from constitutional_ai.training.coding_evolution import (
+    CodingTrainingPipeline,
     train_agent_coding_capability,
 )
 from constitutional_ai.breeder import ConstitutionalBreeder
@@ -98,19 +98,16 @@ def list_agents_command():
         if record:
             print(f"\n{i}. Agent: {agent_id[:16]}...")
             print(
-                f"   Visual DNA: "
-                f"{record.identity_bundle.visual_identity.primary_color_hex}"
+                f"   Visual DNA: {record.identity_bundle.visual_identity.primary_color_hex}"
             )
             print(f"   Creation: {record.creation_date[:19]}")
-            print(f"   Capabilities: " f"{', '.join(record.get_capability_names())}")
+            print(f"   Capabilities: {', '.join(record.get_capability_names())}")
 
             # Show best capability
             best = record.get_best_capability()
             if best:
                 cap_name, cap_record = best
-                print(
-                    f"   Best: {cap_name} " f"(fitness: {cap_record.final_fitness:.3f})"
-                )
+                print(f"   Best: {cap_name} (fitness: {cap_record.final_fitness:.3f})")
 
             print(f"   Notes: {record.notes or 'No notes'}")
 
@@ -143,13 +140,13 @@ def show_agent_details(agent_id: str):
 
     # Basic info
     print(f"Full ID: {record.agent_id}")
-    print(f"Visual DNA: " f"{record.identity_bundle.visual_identity.primary_color_hex}")
+    print(f"Visual DNA: {record.identity_bundle.visual_identity.primary_color_hex}")
     print(f"Creation Date: {record.creation_date}")
     print(f"Notes: {record.notes or 'No notes'}")
 
     # Constitutional traits (top 5)
     traits = record.identity_bundle.constitution_result.constitution
-    print("\nConstitutional Traits (top 5):")
+    print(f"\nConstitutional Traits (top 5):")
     numeric_traits = {
         k: float(v)
         for k, v in traits.items()
@@ -202,7 +199,7 @@ def test_agent_language(agent_id: str, prompt: str = "The quick brown"):
         return
 
     print(f"\nTesting language generation for agent {full_agent_id[:16]}...")
-    print(f"Visual DNA: " f"{record.identity_bundle.visual_identity.primary_color_hex}")
+    print(f"Visual DNA: {record.identity_bundle.visual_identity.primary_color_hex}")
 
     # Load trained network
     persistence = AgentPersistence()
@@ -231,9 +228,11 @@ def test_agent_language(agent_id: str, prompt: str = "The quick brown"):
         )
         print(f'\nPrompt: "{prompt}"')
         print("Generated text:")
-        sample = generation_result.sample_outputs.get("generated_text", "No sample")
+        sample = generation_result.get("sample_generation", {}).get(
+            "generated_text", "No sample"
+        )
         print_agent_text(f'"{sample}"', record, "  ")
-        metrics = generation_result.performance_metrics
+        metrics = generation_result.get("performance_metrics", {})
         print(f"Length: {metrics.get('length', 0)} characters")
         print(f"Unique chars: {metrics.get('unique_chars', 0)}")
     except Exception as e:
@@ -254,7 +253,7 @@ def interactive_chat_with_agent(agent_id: str):
     record = load_agent(full_agent_id)
 
     if not record or "language" not in record.capabilities:
-        print("Agent has no language capability")
+        print(f"Agent has no language capability")
         return
 
     # Load network
@@ -272,8 +271,8 @@ def interactive_chat_with_agent(agent_id: str):
     pipeline = LanguageTrainingPipeline(training_text, record.identity_bundle)
 
     print(f"\nChatting with Agent {full_agent_id[:16]}...")
-    print(f"Visual DNA: " f"{record.identity_bundle.visual_identity.primary_color_hex}")
-    print(f"Language fitness: " f"{record.capabilities['language'].final_fitness:.3f}")
+    print(f"Visual DNA: {record.identity_bundle.visual_identity.primary_color_hex}")
+    print(f"Language fitness: {record.capabilities['language'].final_fitness:.3f}")
     print("\nType 'quit' to exit, or enter prompts to see agent responses.")
     print("-" * 60)
 
@@ -293,7 +292,7 @@ def interactive_chat_with_agent(agent_id: str):
                 network, seed_text=prompt[:4], max_length=100, max_inputs=4
             )
 
-            response = result.sample_outputs["generated_text"][len(prompt[:4]) :]
+            response = result["generated_text"][len(prompt[:4]) :]
             if len(response) > 200:
                 response = response[:200] + "..."
 
@@ -306,195 +305,12 @@ def interactive_chat_with_agent(agent_id: str):
             print(f"Error: {e}")
 
 
-def breed_agents(
-    parent1_id: str,
-    parent2_id: str,
-    count: int = 1,
-    train_language: bool = True,
-    generations: int = 3,
-):
-    """
-    Breed two agents to create offspring with optional language training.
-
-    Args:
-        parent1_id: First parent agent ID (partial match supported)
-        parent2_id: Second parent agent ID (partial match supported)
-        count: Number of offspring to create (default: 1)
-        train_language: Whether to train offspring in language capability
-        (default: True)
-        generations: Training generations for offspring (default: 3)
-    """
-    print("CONSTITUTIONAL AGENT BREEDING")
-    print("=" * 50)
-
-    # Find parent agents
-    agents = list_all_agents()
-    parent1_matches = [a for a in agents if a.startswith(parent1_id)]
-    parent2_matches = [a for a in agents if a.startswith(parent2_id)]
-
-    if not parent1_matches:
-        print(f"No agent found matching: {parent1_id}")
-        return
-    if not parent2_matches:
-        print(f"No agent found matching: {parent2_id}")
-        return
-
-    if len(parent1_matches) > 1:
-        print(
-            f"Multiple matches for {parent1_id}: {[a[:12] for a in parent1_matches[:3]]}"
-        )
-        return
-    if len(parent2_matches) > 1:
-        print(
-            f"Multiple matches for {parent2_id}: {[a[:12] for a in parent2_matches[:3]]}"
-        )
-        return
-
-    # Load parent records
-    parent1_record = load_agent(parent1_matches[0])
-    parent2_record = load_agent(parent2_matches[0])
-
-    if not parent1_record or not parent2_record:
-        print("Could not load parent records")
-        return
-
-    # Get best fitness for each parent
-    parent1_fitness = "unknown"
-    parent2_fitness = "unknown"
-    if parent1_record.capabilities:
-        best_cap1 = parent1_record.get_best_capability()
-        if best_cap1:
-            parent1_fitness = f"{best_cap1[1].final_fitness:.3f}"
-    if parent2_record.capabilities:
-        best_cap2 = parent2_record.get_best_capability()
-        if best_cap2:
-            parent2_fitness = f"{best_cap2[1].final_fitness:.3f}"
-
-    print(f"Parent 1: {parent1_record.agent_id[:12]}... (fitness: {parent1_fitness})")
-    print(f"Parent 2: {parent2_record.agent_id[:12]}... (fitness: {parent2_fitness})")
-    print(f"Creating {count} offspring with {generations} training generations each")
-    print("-" * 50)
-
-    # Initialize breeder
-    breeder = ConstitutionalBreeder()
-    successful_offspring = []
-
-    for i in range(count):
-        print(f"\nOffspring {i+1}/{count}:")
-        print("-" * 20)
-
-        try:
-            # Breed constitutional genomes
-            breeding_result = breeder.breed_agents(
-                parent1_record.identity_bundle.genome,
-                parent2_record.identity_bundle.genome,
-                seed=hash(f"{parent1_record.agent_id}{parent2_record.agent_id}{i}")
-                % 10000,
-            )
-
-            offspring_genome = breeding_result.offspring
-            print(f"  Bred genome: {offspring_genome.compute_genome_hash()[:12]}...")
-            print(f"  Method: {breeding_result.breeding_method}")
-
-            # Create identity for offspring
-            offspring_identity = create_agent_identity(
-                offspring_genome, seed_closure=hash(f"offspring_{i}") % 10000
-            )
-            print(f"  Identity: {offspring_identity.id_hash[:12]}...")
-            print(
-                f"  Visual DNA: {offspring_identity.visual_identity.primary_color_hex}"
-            )
-
-            if train_language:
-                print(f"  Training language capability ({generations} generations)...")
-                try:
-                    # Train language capability
-                    training_result = train_agent_language_capability(
-                        offspring_identity, generations=generations
-                    )
-
-                    # Add identity_bundle to training result for persistence
-                    training_result["identity_bundle"] = offspring_identity
-
-                    # Save trained agent
-                    agent_id = save_training_result(training_result, "language")
-                    print(f"  Trained and saved: {agent_id[:12]}...")
-                    print(
-                        f"  Final fitness: {training_result.get('final_fitness', 'unknown')}"
-                    )
-
-                    successful_offspring.append(agent_id)
-
-                except Exception as e:
-                    print(f"  Training failed: {e}")
-                    # Still save the untrained agent
-                    from constitutional_ai.persistence import (
-                        AgentRecord,
-                        AgentPersistence,
-                    )
-                    from datetime import datetime
-
-                    record = AgentRecord(
-                        agent_id=offspring_identity.id_hash,
-                        identity_bundle=offspring_identity,
-                        capabilities={},
-                        creation_date=datetime.now().isoformat(),
-                        lineage={
-                            "parent1": parent1_record.agent_id,
-                            "parent2": parent2_record.agent_id,
-                            "breeding_method": breeding_result.breeding_method,
-                        },
-                        notes=f"Untrained offspring of {parent1_record.agent_id[:12]}... and {parent2_record.agent_id[:12]}...",
-                    )
-                    persistence = AgentPersistence()
-                    persistence.save_agent(record)
-                    successful_offspring.append(offspring_identity.id_hash)
-                    print(f"  Saved untrained: {offspring_identity.id_hash[:12]}...")
-            else:
-                # Save without training
-                from constitutional_ai.persistence import AgentRecord, AgentPersistence
-                from datetime import datetime
-
-                record = AgentRecord(
-                    agent_id=offspring_identity.id_hash,
-                    identity_bundle=offspring_identity,
-                    capabilities={},
-                    creation_date=datetime.now().isoformat(),
-                    lineage={
-                        "parent1": parent1_record.agent_id,
-                        "parent2": parent2_record.agent_id,
-                        "breeding_method": breeding_result.breeding_method,
-                    },
-                    notes=f"Offspring of {parent1_record.agent_id[:12]}... and {parent2_record.agent_id[:12]}... (no training)",
-                )
-                persistence = AgentPersistence()
-                persistence.save_agent(record)
-                successful_offspring.append(offspring_identity.id_hash)
-                print(f"  Saved: {offspring_identity.id_hash[:12]}...")
-
-        except Exception as e:
-            print(f"  Failed to create offspring {i+1}: {e}")
-            continue
-
-    # Summary
-    print("\n" + "=" * 50)
-    print(f"BREEDING COMPLETE: {len(successful_offspring)}/{count} successful")
-    if successful_offspring:
-        print("New agents:")
-        for agent_id in successful_offspring:
-            print(f"  {agent_id[:12]}...")
-        print(f"\nTo view: python agent_browser.py show {successful_offspring[0][:8]}")
-        print(
-            f"To breed further: python agent_browser.py breed {successful_offspring[0][:8]} {successful_offspring[-1][:8] if len(successful_offspring) > 1 else parent1_matches[0][:8]}"
-        )
-
-
 def progressive_breed_agents(
     parent1_id: str,
     parent2_id: str,
     rounds: int = 3,
     offspring_per_round: int = 5,
-    test_prompts: Optional[List[str]] = None,
+    test_prompts: List[str] = None,
     min_fitness_threshold: float = 0.05,
 ):
     """
@@ -525,7 +341,7 @@ def progressive_breed_agents(
             "Neural networks",
         ]
 
-    print("*** PROGRESSIVE BREEDING TOURNAMENT ***")
+    print("🎯 **PROGRESSIVE BREEDING TOURNAMENT** 🎯")
     print("=" * 60)
     print(f"Parents: {parent1_id[:12]}... + {parent2_id[:12]}...")
     print(f"Rounds: {rounds} | Offspring/Round: {offspring_per_round}")
@@ -537,7 +353,7 @@ def progressive_breed_agents(
     elite_agents = []
 
     # Round 0: Initial parents
-    print("\n*** ROUND 0: PARENT EVALUATION ***")
+    print("\n🏆 ROUND 0: PARENT EVALUATION")
     print("-" * 40)
 
     # Find and load parents
@@ -566,7 +382,7 @@ def progressive_breed_agents(
 
     # Progressive breeding rounds
     for round_num in range(1, rounds + 1):
-        print(f"\n*** ROUND {round_num}: BREEDING & TESTING ***")
+        print(f"\n🏆 ROUND {round_num}: BREEDING & TESTING")
         print("-" * 40)
 
         current_elite = elite_agents[-2:]  # Use last 2 elites as parents
@@ -578,7 +394,7 @@ def progressive_breed_agents(
 
         # Create offspring for this round
         for i in range(offspring_per_round):
-            print(f"\n  >> Creating offspring {i+1}/{offspring_per_round}...")
+            print(f"\n  👶 Creating offspring {i+1}/{offspring_per_round}...")
 
             try:
                 # Breed new offspring
@@ -597,7 +413,7 @@ def progressive_breed_agents(
                 )
 
                 # Train the offspring
-                print("    🧠 Training language capability (3 generations)...")
+                print(f"    🧠 Training language capability (3 generations)...")
                 training_result = train_agent_language_capability(
                     offspring_identity, generations=3
                 )
@@ -605,18 +421,14 @@ def progressive_breed_agents(
                 # Save the trained agent
                 offspring_id = save_training_result(training_result, "language")
                 offspring_record = load_agent(offspring_id)
-                if not offspring_record:
-                    print(f"    ❌ Failed to load offspring {offspring_id}")
-                    continue
 
                 # Test the offspring
-                print("    🧪 Testing offspring performance...")
+                print(f"    🧪 Testing offspring performance...")
                 offspring_fitness = test_agent_fitness(offspring_record, test_prompts)
 
                 print(f"    📊 Fitness: {offspring_fitness:.3f}")
                 print(
-                    f"    🧬 DNA: "
-                    f"{offspring_record.identity_bundle.visual_identity.primary_color_hex}"
+                    f"    🧬 DNA: {offspring_record.identity_bundle.visual_identity.primary_color_hex}"
                 )
                 # Show sample generation
                 if "sample_generation" in training_result:
@@ -678,10 +490,10 @@ def progressive_breed_agents(
             )
 
     if elite_agents:
-        print("\n*** FINAL ELITE AGENTS: ***")
+        print("\n🏆 FINAL ELITE AGENTS:")
         for i, agent in enumerate(elite_agents[-3:], 1):  # Show last 3 elites
             elite_marker = (
-                ">>> CHAMPION" if i == len(elite_agents[-3:]) else f">>> ELITE #{i}"
+                "👑 CHAMPION" if i == len(elite_agents[-3:]) else f"🥇 ELITE #{i}"
             )
             print(
                 f"  {elite_marker}: {agent.agent_id[:16]}... "
@@ -738,7 +550,7 @@ def test_agent_fitness(agent_record, test_prompts: List[str]) -> float:
                 )
 
                 # Simple fitness based on generation length and coherence
-                generated_text = result.sample_outputs.get("generated_text", "")
+                generated_text = result.get("generated_text", "")
                 if len(generated_text) > 10:
                     # Basic coherence check (has some letters)
                     coherence = sum(1 for c in generated_text if c.isalpha()) / len(
@@ -756,7 +568,9 @@ def test_agent_fitness(agent_record, test_prompts: List[str]) -> float:
         return 0.0
 
 
-def train_agent_capability(agent_id: str, capability: str, generations: int = 5):
+def train_agent_capability(
+    agent_id: str, capability: str, generations: int = 5, use_gpu: bool = None
+):
     """Train an existing agent in a new capability."""
 
     # Find agent
@@ -793,27 +607,33 @@ def train_agent_capability(agent_id: str, capability: str, generations: int = 5)
         print("Training will improve existing capability...")
 
     try:
-        # Use CPU training (optimal for NEAT)
-        print("🧠 Using CPU training (optimal for NEAT)...")
+        # Determine GPU usage
+        actual_use_gpu = True  # Default to GPU
+        if use_gpu is not None:
+            actual_use_gpu = use_gpu
+
+        if actual_use_gpu:
+            print(f"🚀 Using GPU acceleration for {capability} training...")
+        else:
+            print(f"💻 Using CPU for {capability} training...")
 
         # Train in the requested capability
         if capability == "language":
             training_result = train_agent_language_capability(
-                record.identity_bundle, generations=generations
+                record.identity_bundle, generations=generations, use_gpu=actual_use_gpu
             )
         elif capability == "coding":
             training_result = train_agent_coding_capability(
-                record.identity_bundle, generations=generations
+                record.identity_bundle, generations=generations, use_gpu=actual_use_gpu
             )
         else:
             print(f"Unsupported capability: {capability}")
             print("Supported capabilities: language, coding")
             return
 
-        print("\\nTraining complete!")
+        print(f"\\nTraining complete!")
         print(
-            f"Final fitness: "
-            f"{training_result.get('final_fitness', training_result.get('fitness', 0.0)):.3f}"
+            f"Final fitness: {training_result.get('final_fitness', training_result.get('fitness', 0.0)):.3f}"
         )
 
         # Show sample output
@@ -866,8 +686,8 @@ def train_agent_capability(agent_id: str, capability: str, generations: int = 5)
                 training_result["best_genome"],
             )
 
-        print("\\nAgent updated successfully!")
-        print("Test the new capability with:")
+        print(f"\\nAgent updated successfully!")
+        print(f"Test the new capability with:")
         print(f"  python agent_browser.py test-{capability} {agent_id[:8]}")
 
     except Exception as e:
@@ -927,7 +747,7 @@ def test_agent_coding(agent_id: str, prompt: str = "def hello"):
         )
 
         print(f'\\nPrompt: "{prompt}"')
-        print("Generated Code:")
+        print(f"Generated Code:")
         print("-" * 40)
         generated_code = generation_result.sample_outputs["generated_code"]
         print(generated_code)
@@ -1020,26 +840,11 @@ Examples:
     train_parser.add_argument(
         "--generations", type=int, default=5, help="Training generations (default: 5)"
     )
-
-    # Auto-breed command
-    auto_breed_parser = subparsers.add_parser(
-        "auto-breed",
-        help="Automatically breed the best agents based on fitness and trait complementarity",
+    train_parser.add_argument(
+        "--gpu", action="store_true", help="Use GPU acceleration (default: auto-detect)"
     )
-    auto_breed_parser.add_argument(
-        "--generations",
-        type=int,
-        default=5,
-        help="Training generations per offspring (default: 5)",
-    )
-    auto_breed_parser.add_argument(
-        "--count", type=int, default=2, help="Offspring per breeding pair (default: 2)"
-    )
-    auto_breed_parser.add_argument(
-        "--min-fitness",
-        type=float,
-        default=0.3,
-        help="Minimum fitness threshold for breeding (default: 0.3)",
+    train_parser.add_argument(
+        "--no-gpu", action="store_true", help="Force CPU training (disable GPU)"
     )
 
     # Progressive breed command
@@ -1096,7 +901,17 @@ Examples:
             generations=args.generations,
         )
     elif args.command == "train":
-        train_agent_capability(args.agent_id, args.capability, args.generations)
+        # Determine GPU usage from command line flags
+        use_gpu = None
+        if args.no_gpu:
+            use_gpu = False
+        elif args.gpu:
+            use_gpu = True
+        # If neither flag is set, use_gpu remains None (auto-detect)
+
+        train_agent_capability(
+            args.agent_id, args.capability, args.generations, use_gpu
+        )
     elif args.command == "progressive-breed":
         progressive_breed_agents(
             args.parent1_id,
@@ -1106,215 +921,6 @@ Examples:
             test_prompts=args.test_prompts,
             min_fitness_threshold=args.min_fitness,
         )
-    elif args.command == "auto-breed":
-        auto_breed_best_agents(
-            generations=args.generations or 5,
-            offspring_per_pair=args.count or 2,
-            min_fitness_threshold=args.min_fitness or 0.3,
-        )
-
-
-def auto_breed_best_agents(
-    generations: int = 5,
-    offspring_per_pair: int = 2,
-    min_fitness_threshold: float = 0.3,
-):
-    """
-    Automatically breed the best agents based on fitness and trait complementarity.
-
-    This function:
-    1. Identifies top-performing agents by fitness
-    2. Analyzes constitutional trait complementarity
-    3. Creates optimal breeding pairs
-    4. Breeds with intensive training
-    5. Reports results and recommendations
-    """
-    print("CONSTITUTIONAL AUTO-BREEDING SYSTEM")
-    print("=" * 60)
-
-    # Get all agents with fitness data
-    all_agent_ids = list_all_agents()
-    fitness_agents = []
-
-    for agent_id in all_agent_ids:
-        record = load_agent(agent_id)
-        if not record:
-            continue
-        best_fitness = 0.0
-        if record.capabilities:
-            for capability in record.capabilities.values():
-                if capability.final_fitness > best_fitness:
-                    best_fitness = capability.final_fitness
-
-        if best_fitness >= min_fitness_threshold:
-            fitness_agents.append((record, best_fitness))
-
-    if len(fitness_agents) < 2:
-        print(f"❌ Need at least 2 agents with fitness >= {min_fitness_threshold}")
-        print(f"   Found {len(fitness_agents)} qualified agents")
-        print("   Try lowering --min-fitness or train more agents")
-        return
-
-    # Sort by fitness
-    fitness_agents.sort(key=lambda x: x[1], reverse=True)
-
-    print(f"Top {min(len(fitness_agents), 5)} Performing Agents:")
-    for i, (record, fitness) in enumerate(fitness_agents[:5], 1):
-        traits_summary = get_agent_trait_summary(record.identity_bundle)
-        print(
-            f"   {i}. {record.agent_id[:12]}... | Fitness: {fitness:.3f} | {traits_summary}"
-        )
-
-    # Create optimal breeding pairs
-    breeding_pairs = create_optimal_breeding_pairs(fitness_agents[:6])  # Top 6 agents
-
-    print("\nOptimal Breeding Pairs (based on trait complementarity):")
-    total_offspring = 0
-    successful_breeds = []
-
-    for i, (parent1, parent2, compatibility_score) in enumerate(breeding_pairs, 1):
-        print(f"\n--- Pair {i}: Complementarity Score {compatibility_score:.2f} ---")
-        print(f"Parent 1: {parent1[0].agent_id[:12]}... (fitness: {parent1[1]:.3f})")
-        print(f"Parent 2: {parent2[0].agent_id[:12]}... (fitness: {parent2[1]:.3f})")
-
-        # Breed this pair
-        try:
-            breed_agents(
-                parent1[0].agent_id[:8],
-                parent2[0].agent_id[:8],
-                count=offspring_per_pair,
-                generations=generations,
-                train_language=True,
-            )
-            result = [
-                f"offspring_{i}" for i in range(offspring_per_pair)
-            ]  # Placeholder for success tracking
-            if result and len(result) > 0:
-                successful_breeds.extend(result)
-                total_offspring += len(result)
-                print(
-                    f"SUCCESS: Created {len(result)} offspring with {generations} generations training"
-                )
-            else:
-                print("FAILED: Breeding failed")
-        except Exception as e:
-            print(f"ERROR: Breeding error: {e}")
-
-    # Summary
-    print("\nAUTO-BREEDING COMPLETE!")
-    print(f"   Total offspring created: {total_offspring}")
-    print(f"   Successful breeding pairs: {len(successful_breeds)}")
-
-    if successful_breeds:
-        print("\\nNext steps:")
-        print("   python agent_browser.py list  # View all agents")
-        print("   python logic_tests.py --all   # Test learning capabilities")
-        print("   python top_agents.py          # Compare performance")
-
-
-def get_agent_trait_summary(identity_bundle) -> str:
-    """Get a summary of agent's top traits."""
-    constitution = identity_bundle.constitution_result.constitution
-
-    # Filter numeric traits only and get top 3
-    numeric_traits = [
-        (name, val)
-        for name, val in constitution.items()
-        if isinstance(val, (int, float))
-    ]
-    top_traits = sorted(numeric_traits, key=lambda x: x[1], reverse=True)[:3]
-
-    summary_parts = []
-    for trait_name, value in top_traits:
-        summary_parts.append(f"{trait_name}={value:.1f}")
-
-    return " | ".join(summary_parts)
-
-
-def create_optimal_breeding_pairs(fitness_agents) -> List[Tuple]:
-    """
-    Create breeding pairs that maximize genetic diversity and fitness.
-
-    Strategy:
-    1. Always include the top performer
-    2. Find agents with complementary traits
-    3. Avoid very similar agents (genetic diversity)
-    4. Balance fitness with complementarity
-    """
-    pairs = []
-    used_agents = set()
-
-    for i in range(len(fitness_agents)):
-        if fitness_agents[i][0].agent_id in used_agents:
-            continue
-
-        parent1 = fitness_agents[i]
-        best_complement = None
-        best_score = -1
-
-        for j in range(i + 1, len(fitness_agents)):
-            if fitness_agents[j][0].agent_id in used_agents:
-                continue
-
-            parent2 = fitness_agents[j]
-
-            # Calculate complementarity score
-            score = calculate_trait_complementarity(
-                parent1[0].identity_bundle, parent2[0].identity_bundle
-            )
-
-            # Bonus for fitness combination
-            fitness_bonus = (parent1[1] + parent2[1]) / 2 * 0.5
-            total_score = score + fitness_bonus
-
-            if total_score > best_score:
-                best_score = total_score
-                best_complement = parent2
-
-        if best_complement:
-            pairs.append((parent1, best_complement, best_score))
-            used_agents.add(parent1[0].agent_id)
-            used_agents.add(best_complement[0].agent_id)
-
-            # Limit to reasonable number of breeding pairs
-            if len(pairs) >= 3:
-                break
-
-    return pairs
-
-
-def calculate_trait_complementarity(identity1, identity2) -> float:
-    """
-    Calculate how complementary two agents' traits are.
-
-    Higher scores for agents that have different strengths,
-    creating more genetically diverse offspring.
-    """
-    constitution1 = identity1.constitution_result.constitution
-    constitution2 = identity2.constitution_result.constitution
-
-    # Calculate difference in trait profiles
-    trait_differences = []
-
-    for trait_name in constitution1.keys():
-        if trait_name in constitution2:
-            val1 = constitution1[trait_name]
-            val2 = constitution2[trait_name]
-
-            # Only compare numeric traits
-            if isinstance(val1, (int, float)) and isinstance(val2, (int, float)):
-                diff = abs(val1 - val2)
-                trait_differences.append(diff)
-
-    # Higher average difference = more complementary
-    if trait_differences:
-        avg_difference = sum(trait_differences) / len(trait_differences)
-        # Scale to 0-1 range, with higher being more complementary
-        complementarity = min(avg_difference / 5.0, 1.0)  # Assuming max trait value ~10
-    else:
-        complementarity = 0.0
-
-    return complementarity
 
 
 if __name__ == "__main__":

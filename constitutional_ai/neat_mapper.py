@@ -6,7 +6,7 @@ This module ensures monotone mapping - raising any trait never decreases
 the corresponding NEAT parameters, maintaining mathematical consistency.
 """
 
-from typing import Dict, Any, Tuple
+from typing import Dict, Any, Tuple, Optional
 from dataclasses import dataclass
 from .traits import get_trait_definitions, get_trait_ordering_index
 
@@ -92,8 +92,11 @@ class TraitToNEATMapper:
     lower NEAT parameter values.
     """
 
-    def __init__(self):
-        """Initialize the mapper with default parameter ranges."""
+    def __init__(self, governance_decisions: Optional[Dict[str, Any]] = None):
+        """Initialize the mapper with default parameter ranges and optional governance decisions."""
+
+        # Store governance decisions that modify base mappings
+        self.governance_decisions = governance_decisions or {}
 
         # Define base parameter ranges - SCALED FOR 100M+ PARAMETER NETWORKS
         self.base_ranges = {
@@ -167,8 +170,10 @@ class TraitToNEATMapper:
         # Population size: influenced by stability and processing speed
         # More stable, faster agents can handle larger populations
         pop_factor = stability * 0.6 + processing_speed * 0.4
+        
+        # Apply governance decisions if present
         population_size = int(
-            self._map_to_range(pop_factor, self.base_ranges["population_size"])
+            self._map_to_range(pop_factor, self._get_governance_adjusted_range("population_size"))
         )
 
         # Elitism: more stable agents preserve more elite individuals
@@ -251,8 +256,12 @@ class TraitToNEATMapper:
 
         # Weight mutation rate: driven by innovation and risk tolerance
         weight_mut_factor = innovation_drive * 0.6 + risk_tolerance * 0.4
-        weight_mutation_rate = self._map_to_range(
-            weight_mut_factor, self.base_ranges["weight_mutation_rate"]
+        base_weight_mutation_rate = self._map_to_range(
+            weight_mut_factor, self._get_governance_adjusted_range("weight_mutation_rate")
+        )
+        # Apply governance mapping modifications
+        weight_mutation_rate = self._apply_governance_mapping_modifications(
+            "weight_mutation_rate", base_weight_mutation_rate, "InnovationDrive"
         )
 
         # Weight perturbation: more stable agents use more perturbation vs replacement
@@ -263,8 +272,12 @@ class TraitToNEATMapper:
 
         # Add node rate: driven by curiosity and innovation
         add_node_factor = curiosity * 0.5 + innovation_drive * 0.5
-        add_node_rate = self._map_to_range(
-            add_node_factor, self.base_ranges["add_node_rate"]
+        base_add_node_rate = self._map_to_range(
+            add_node_factor, self._get_governance_adjusted_range("add_node_rate")
+        )
+        # Apply governance mapping modifications for structural evolution
+        add_node_rate = self._apply_governance_mapping_modifications(
+            "add_node_rate", base_add_node_rate, "InnovationDrive"
         )
 
         # Add connection rate: similar to add node but slightly more conservative
@@ -415,6 +428,54 @@ class TraitToNEATMapper:
         )
 
         return {"exploration_rate": exploration_rate, "temperature": temperature}
+
+    def _get_governance_adjusted_range(self, parameter_name: str) -> Tuple[float, float]:
+        """Get parameter range adjusted by governance decisions."""
+        base_range = self.base_ranges[parameter_name]
+        
+        # Check if governance has modified this parameter's range
+        governance_key = f"range_modifier_{parameter_name}"
+        if governance_key in self.governance_decisions:
+            modifier = self.governance_decisions[governance_key]
+            if isinstance(modifier, dict):
+                # Apply multiplicative modifier
+                multiplier = modifier.get("multiplier", 1.0)
+                offset = modifier.get("offset", 0.0)
+                
+                adjusted_min = max(0, base_range[0] * multiplier + offset)
+                adjusted_max = base_range[1] * multiplier + offset
+                
+                return (adjusted_min, adjusted_max)
+        
+        return base_range
+    
+    def _apply_governance_mapping_modifications(self, parameter_name: str, base_value: float, trait_name: str) -> float:
+        """Apply governance-approved modifications to trait-parameter mappings."""
+        
+        # Check for trait-specific mapping modifications
+        mapping_key = f"mapping_{trait_name}_{parameter_name}"
+        if mapping_key in self.governance_decisions:
+            modification = self.governance_decisions[mapping_key]
+            
+            if isinstance(modification, dict):
+                mod_type = modification.get("type", "multiplier")
+                
+                if mod_type == "multiplier":
+                    multiplier = modification.get("value", 1.0)
+                    return base_value * multiplier
+                
+                elif mod_type == "exponential":
+                    # Exponential boost for innovation-driven parameters
+                    exponent = modification.get("value", 1.0)
+                    return base_value ** exponent
+                
+                elif mod_type == "threshold":
+                    # Threshold-based modifications
+                    threshold = modification.get("threshold", 0.5)
+                    boost = modification.get("boost", 1.5)
+                    return base_value * boost if base_value > threshold else base_value
+        
+        return base_value
 
     def _map_to_range(
         self, normalized_value: float, value_range: Tuple[float, float]

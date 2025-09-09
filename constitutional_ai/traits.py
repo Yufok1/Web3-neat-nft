@@ -56,13 +56,13 @@ COMPLETE_TRAIT_DEFINITIONS: Dict[str, TraitDomain] = {
         name="WorkingMemory",
         description="Capacity to retain and manipulate information during processing",
         allele_type="categorical",
-        domain=(
+        domain=[
             TraitLevel.UNKNOWN.value,
             TraitLevel.MINIMAL.value,
             TraitLevel.LOW.value,
             TraitLevel.MODERATE.value,
             TraitLevel.HIGH.value,
-        ),
+        ],
         default_value=TraitLevel.LOW.value,
         fixed_points=[
             TraitLevel.UNKNOWN.value,
@@ -177,7 +177,7 @@ COMPLETE_TRAIT_DEFINITIONS: Dict[str, TraitDomain] = {
         name="CommunicationStyle",
         description="Approach to information sharing and interaction",
         allele_type="categorical",
-        domain=("Minimal", "Technical", "Balanced", "Expressive", "Verbose"),
+        domain=["Minimal", "Technical", "Balanced", "Expressive", "Verbose"],
         default_value="Balanced",
         fixed_points=["Minimal", "Technical", "Balanced", "Expressive", "Verbose"],
         monotone_order=["Minimal", "Technical", "Balanced", "Expressive", "Verbose"],
@@ -200,6 +200,226 @@ COMPLETE_TRAIT_DEFINITIONS: Dict[str, TraitDomain] = {
         default_value=1.0,
         fixed_points=[0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0],
         monotone_order=[0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0],
+    ),
+    # Phase 1 Foundation Traits - Core cognitive capabilities
+    "CriticalThinking": TraitDomain(
+        name="CriticalThinking",
+        description="Ability to objectively evaluate information and make reasoned judgments",
+        allele_type="numeric",
+        domain=(0.0, 5.0),  # 0=uncritical acceptance, 5=rigorous analysis
+        default_value=2.0,
+        fixed_points=[0.0, 1.0, 2.0, 3.0, 4.0, 5.0],
+        monotone_order=[0.0, 1.0, 2.0, 3.0, 4.0, 5.0],
+    ),
+    "PatternRecognition": TraitDomain(
+        name="PatternRecognition", 
+        description="Ability to identify meaningful patterns in complex data",
+        allele_type="numeric",
+        domain=(1.0, 8.0),  # 1=basic patterns only, 8=complex pattern mastery
+        default_value=4.0,
+        fixed_points=[1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0],
+        monotone_order=[1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0],
+    ),
+    "CommonSense": TraitDomain(
+        name="CommonSense",
+        description="Practical knowledge and reasoning about everyday situations",
+        allele_type="numeric", 
+        domain=(0.0, 4.0),  # 0=lacks basic understanding, 4=strong intuitive grasp
+        default_value=2.0,
+        fixed_points=[0.0, 0.8, 1.6, 2.4, 3.2, 4.0],
+        monotone_order=[0.0, 0.8, 1.6, 2.4, 3.2, 4.0],
+    ),
+    "Resilience": TraitDomain(
+        name="Resilience",
+        description="Ability to recover from failures and adapt to adverse conditions",
+        allele_type="numeric",
+        domain=(0.1, 3.0),  # 0.1=brittle/fragile, 3.0=highly robust
+        default_value=1.5,
+        fixed_points=[0.1, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0],
+        monotone_order=[0.1, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0],
+    ),
+    "Adaptability": TraitDomain(
+        name="Adaptability", 
+        description="Ability to adjust behavior based on changing environmental conditions",
+        allele_type="numeric",
+        domain=(0.0, 4.0),  # 0=rigid/inflexible, 4=highly adaptive
+        default_value=2.0,
+        fixed_points=[0.0, 0.7, 1.3, 2.0, 2.7, 3.3, 4.0],
+        monotone_order=[0.0, 0.7, 1.3, 2.0, 2.7, 3.3, 4.0],
+    ),
+    # Phase 2 Reasoning Enhancement Traits - Advanced cognitive capabilities
+    "CausalReasoning": TraitDomain(
+        name="CausalReasoning",
+        description="Understanding cause-effect relationships and counterfactual scenarios",
+        allele_type="numeric",
+        domain=(0.0, 6.0),  # 0=no causal understanding, 6=sophisticated causal modeling
+        default_value=2.5,
+        fixed_points=[0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+        monotone_order=[0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+    ),
+    "AbstractThinking": TraitDomain(
+        name="AbstractThinking",
+        description="Ability to deal with concepts, patterns, and ideas beyond concrete examples",
+        allele_type="numeric", 
+        domain=(0.5, 5.5),  # 0.5=concrete only, 5.5=highly abstract conceptual thinking
+        default_value=3.0,
+        fixed_points=[0.5, 1.5, 2.5, 3.0, 3.5, 4.5, 5.5],
+        monotone_order=[0.5, 1.5, 2.5, 3.0, 3.5, 4.5, 5.5],
+    ),
+    "TemporalReasoning": TraitDomain(
+        name="TemporalReasoning",
+        description="Understanding time sequences, duration, and temporal dependencies",
+        allele_type="numeric",
+        domain=(0.0, 4.5),  # 0=no temporal awareness, 4.5=sophisticated temporal modeling
+        default_value=2.0,
+        fixed_points=[0.0, 0.8, 1.5, 2.0, 2.8, 3.5, 4.5],
+        monotone_order=[0.0, 0.8, 1.5, 2.0, 2.8, 3.5, 4.5],
+    ),
+    "SpatialReasoning": TraitDomain(
+        name="SpatialReasoning", 
+        description="Understanding spatial relationships, geometry, and navigation",
+        allele_type="numeric",
+        domain=(0.2, 5.2),  # 0.2=poor spatial awareness, 5.2=excellent spatial reasoning
+        default_value=2.5,
+        fixed_points=[0.2, 1.0, 2.0, 2.5, 3.0, 4.0, 5.2],
+        monotone_order=[0.2, 1.0, 2.0, 2.5, 3.0, 4.0, 5.2],
+    ),
+    "Intuition": TraitDomain(
+        name="Intuition",
+        description="Ability to make quick, accurate judgments without explicit reasoning",
+        allele_type="numeric",
+        domain=(0.1, 3.5),  # 0.1=purely analytical, 3.5=highly intuitive
+        default_value=1.8,
+        fixed_points=[0.1, 0.6, 1.2, 1.8, 2.4, 3.0, 3.5],
+        monotone_order=[0.1, 0.6, 1.2, 1.8, 2.4, 3.0, 3.5],
+    ),
+    # Phase 3 Social & Emotional Intelligence Traits - Human-AI interaction enhancement
+    "EmotionalIntelligence": TraitDomain(
+        name="EmotionalIntelligence",
+        description="Understanding, processing, and responding to emotional information",
+        allele_type="numeric",
+        domain=(0.0, 4.0),  # 0=no emotional awareness, 4=highly emotionally intelligent
+        default_value=2.0,
+        fixed_points=[0.0, 0.8, 1.6, 2.0, 2.4, 3.2, 4.0],
+        monotone_order=[0.0, 0.8, 1.6, 2.0, 2.4, 3.2, 4.0],
+    ),
+    "Empathy": TraitDomain(
+        name="Empathy",
+        description="Understanding and sharing others' perspectives and feelings",
+        allele_type="numeric",
+        domain=(0.2, 5.0),  # 0.2=minimal empathy, 5.0=highly empathetic
+        default_value=2.5,
+        fixed_points=[0.2, 1.0, 2.0, 2.5, 3.0, 4.0, 5.0],
+        monotone_order=[0.2, 1.0, 2.0, 2.5, 3.0, 4.0, 5.0],
+    ),
+    "SelfAwareness": TraitDomain(
+        name="SelfAwareness", 
+        description="Understanding one's own capabilities, limitations, and internal states",
+        allele_type="numeric",
+        domain=(0.0, 3.8),  # 0=no self-awareness, 3.8=highly self-aware
+        default_value=1.5,
+        fixed_points=[0.0, 0.6, 1.2, 1.5, 2.0, 2.8, 3.8],
+        monotone_order=[0.0, 0.6, 1.2, 1.5, 2.0, 2.8, 3.8],
+    ),
+    "Trustworthiness": TraitDomain(
+        name="Trustworthiness",
+        description="Reliability, honesty, and consistency in behavior and outputs",
+        allele_type="numeric", 
+        domain=(0.5, 4.5),  # 0.5=untrustworthy, 4.5=highly trustworthy
+        default_value=3.0,
+        fixed_points=[0.5, 1.0, 2.0, 3.0, 3.5, 4.0, 4.5],
+        monotone_order=[0.5, 1.0, 2.0, 3.0, 3.5, 4.0, 4.5],
+    ),
+    "Cooperation": TraitDomain(
+        name="Cooperation",
+        description="Ability to work effectively with others toward shared goals",
+        allele_type="numeric",
+        domain=(0.0, 4.2),  # 0=completely independent, 4.2=highly collaborative
+        default_value=2.1,
+        fixed_points=[0.0, 0.7, 1.4, 2.1, 2.8, 3.5, 4.2],
+        monotone_order=[0.0, 0.7, 1.4, 2.1, 2.8, 3.5, 4.2],
+    ),
+    # Phase 4 Advanced Capabilities & Governance Traits - Complete AI characterization
+    "ConflictResolution": TraitDomain(
+        name="ConflictResolution",
+        description="Ability to handle disagreements and find mutually beneficial solutions",
+        allele_type="numeric",
+        domain=(0.0, 3.6),  # 0=avoids conflict, 3.6=excellent mediator
+        default_value=1.8,
+        fixed_points=[0.0, 0.6, 1.2, 1.8, 2.4, 3.0, 3.6],
+        monotone_order=[0.0, 0.6, 1.2, 1.8, 2.4, 3.0, 3.6],
+    ),
+    "CulturalIntelligence": TraitDomain(
+        name="CulturalIntelligence",
+        description="Understanding and adapting to different cultural contexts and norms",
+        allele_type="numeric",
+        domain=(0.2, 4.8),  # 0.2=culturally naive, 4.8=highly culturally aware
+        default_value=2.5,
+        fixed_points=[0.2, 1.0, 2.0, 2.5, 3.0, 4.0, 4.8],
+        monotone_order=[0.2, 1.0, 2.0, 2.5, 3.0, 4.0, 4.8],
+    ),
+    "Leadership": TraitDomain(
+        name="Leadership",
+        description="Ability to guide, influence, and coordinate group activities",
+        allele_type="numeric",
+        domain=(0.0, 5.0),  # 0=follower only, 5.0=natural leader
+        default_value=2.0,
+        fixed_points=[0.0, 1.0, 2.0, 3.0, 4.0, 5.0],
+        monotone_order=[0.0, 1.0, 2.0, 3.0, 4.0, 5.0],
+    ),
+    "Negotiation": TraitDomain(
+        name="Negotiation", 
+        description="Ability to reach mutually beneficial agreements through discussion",
+        allele_type="numeric",
+        domain=(0.1, 4.4),  # 0.1=poor negotiator, 4.4=skilled negotiator
+        default_value=2.2,
+        fixed_points=[0.1, 0.8, 1.5, 2.2, 2.9, 3.6, 4.4],
+        monotone_order=[0.1, 0.8, 1.5, 2.2, 2.9, 3.6, 4.4],
+    ),
+    "GoalOrientation": TraitDomain(
+        name="GoalOrientation",
+        description="Ability to set, pursue, and achieve objectives effectively",
+        allele_type="numeric",
+        domain=(0.0, 4.0),  # 0=aimless, 4.0=highly goal-directed
+        default_value=2.5,
+        fixed_points=[0.0, 0.8, 1.6, 2.5, 3.2, 4.0],
+        monotone_order=[0.0, 0.8, 1.6, 2.5, 3.2, 4.0],
+    ),
+    "Autonomy": TraitDomain(
+        name="Autonomy",
+        description="Ability to operate independently without constant supervision",
+        allele_type="numeric",
+        domain=(0.3, 5.3),  # 0.3=needs supervision, 5.3=fully autonomous
+        default_value=3.0,
+        fixed_points=[0.3, 1.0, 2.0, 3.0, 4.0, 5.0, 5.3],
+        monotone_order=[0.3, 1.0, 2.0, 3.0, 4.0, 5.0, 5.3],
+    ),
+    "Humor": TraitDomain(
+        name="Humor",
+        description="Understanding and generating humorous content appropriately",
+        allele_type="numeric",
+        domain=(0.0, 3.2),  # 0=no humor, 3.2=excellent comedic timing
+        default_value=1.6,
+        fixed_points=[0.0, 0.5, 1.0, 1.6, 2.2, 2.8, 3.2],
+        monotone_order=[0.0, 0.5, 1.0, 1.6, 2.2, 2.8, 3.2],
+    ),
+    "EthicalReasoning": TraitDomain(
+        name="EthicalReasoning",
+        description="Ability to make morally sound decisions considering consequences",
+        allele_type="numeric",
+        domain=(0.5, 5.5),  # 0.5=amoral, 5.5=highly ethical
+        default_value=3.5,
+        fixed_points=[0.5, 1.5, 2.5, 3.5, 4.5, 5.5],
+        monotone_order=[0.5, 1.5, 2.5, 3.5, 4.5, 5.5],
+    ),
+    "Creativity": TraitDomain(
+        name="Creativity",
+        description="Ability to generate novel ideas, solutions, and expressions",
+        allele_type="numeric",
+        domain=(0.1, 4.6),  # 0.1=conventional only, 4.6=highly creative
+        default_value=2.0,
+        fixed_points=[0.1, 0.8, 1.5, 2.0, 2.8, 3.5, 4.6],
+        monotone_order=[0.1, 0.8, 1.5, 2.0, 2.8, 3.5, 4.6],
     ),
 }
 

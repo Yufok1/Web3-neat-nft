@@ -11,10 +11,11 @@ Constitutional traits influence:
 - Learning rate and mutation parameters
 - Creative vs conservative language generation
 - Social/communicative focus vs technical precision
--            max_inputs=getattr(self, 'calculated_inputs', 15)Innovation drive affecting vocabulary diversity
+- Innovation drive affecting vocabulary diversity
 """
 
 import random
+import numpy as np
 import neat
 from typing import Dict, List, Tuple, Any, Optional
 from dataclasses import dataclass
@@ -80,8 +81,7 @@ class LanguageTrainingData(TrainingData):
         return sequences
 
     def get_training_samples(self, num_samples: int) -> List[Tuple[List[int], int]]:
-        """Get training input-output pairs (implements TrainingData
-        interface)."""
+        """Get training input-output pairs (implements TrainingData interface)."""
         return self.get_training_sequences(num_samples)
 
     def prepare_input(self, raw_input: List[int]) -> List[float]:
@@ -112,18 +112,51 @@ class LanguageEvolutionFitness(CapabilityFitnessEvaluator):
         self.agent_identity = agent_identity
         self.traits = agent_identity.constitution_result.constitution
 
-        # Trait-based evaluation weights
-        self.creativity_weight = self._normalize_trait("Innovation_Drive", 0.1, 0.5)
+        # Original trait-based evaluation weights
+        self.creativity_weight = self._normalize_trait("InnovationDrive", 0.1, 0.5)
         self.accuracy_weight = (
             1.0 - self.creativity_weight + 0.5
         )  # Always value accuracy
         self.diversity_weight = self._normalize_trait("Curiosity", 0.1, 0.4)
+        
+        # Phase 1 Foundation Trait Modifiers  
+        self.critical_thinking_weight = self._normalize_trait("CriticalThinking", 0.7, 1.5)
+        self.pattern_recognition_weight = self._normalize_trait("PatternRecognition", 0.7, 1.5)
+        self.common_sense_weight = self._normalize_trait("CommonSense", 0.9, 1.2)
+        self.resilience_weight = self._normalize_trait("Resilience", 0.8, 1.1)  
+        self.adaptability_weight = self._normalize_trait("Adaptability", 0.9, 1.4)
+        
+        # Phase 2 Reasoning Enhancement Trait Modifiers
+        self.causal_reasoning_weight = self._normalize_trait("CausalReasoning", 0.6, 1.6)
+        self.abstract_thinking_weight = self._normalize_trait("AbstractThinking", 0.8, 1.3)
+        self.temporal_reasoning_weight = self._normalize_trait("TemporalReasoning", 0.9, 1.4)
+        self.spatial_reasoning_weight = self._normalize_trait("SpatialReasoning", 0.7, 1.2)
+        self.intuition_weight = self._normalize_trait("Intuition", 0.5, 1.8)
+        
+        # Phase 3 Social & Emotional Intelligence Trait Modifiers
+        self.emotional_intelligence_weight = self._normalize_trait("EmotionalIntelligence", 0.8, 1.4)
+        self.empathy_weight = self._normalize_trait("Empathy", 0.9, 1.3)
+        self.self_awareness_weight = self._normalize_trait("SelfAwareness", 0.7, 1.5)
+        self.trustworthiness_weight = self._normalize_trait("Trustworthiness", 1.0, 1.2)
+        self.cooperation_weight = self._normalize_trait("Cooperation", 0.8, 1.6)
+        
+        # Phase 4 Advanced Capabilities & Governance Trait Modifiers
+        self.conflict_resolution_weight = self._normalize_trait("ConflictResolution", 0.9, 1.3)
+        self.cultural_intelligence_weight = self._normalize_trait("CulturalIntelligence", 0.8, 1.4)
+        self.leadership_weight = self._normalize_trait("Leadership", 0.7, 1.5)
+        self.negotiation_weight = self._normalize_trait("Negotiation", 0.8, 1.4)
+        self.goal_orientation_weight = self._normalize_trait("GoalOrientation", 0.9, 1.6)
+        self.autonomy_weight = self._normalize_trait("Autonomy", 0.6, 1.8)
+        self.humor_weight = self._normalize_trait("Humor", 0.9, 1.2)
+        self.ethical_reasoning_weight = self._normalize_trait("EthicalReasoning", 1.0, 1.3)
+        self.creativity_weight_advanced = self._normalize_trait("Creativity", 0.5, 1.9)
 
     def _normalize_trait(
         self, trait_name: str, min_weight: float, max_weight: float
     ) -> float:
         """Convert trait value to weight for fitness calculation."""
         trait_value = self.traits.get(trait_name, 5.0)
+        
         if isinstance(trait_value, str):
             # Handle categorical traits
             trait_map = {
@@ -135,8 +168,16 @@ class LanguageEvolutionFitness(CapabilityFitnessEvaluator):
             }
             trait_value = trait_map.get(trait_value, 5.0)
 
-        # Normalize to 0-1 range (assuming traits are 1-10 scale)
-        normalized = max(0.0, min(1.0, (trait_value - 1.0) / 9.0))
+        # Get trait domain from definitions for proper normalization
+        from ..traits import COMPLETE_TRAIT_DEFINITIONS
+        if trait_name in COMPLETE_TRAIT_DEFINITIONS:
+            domain = COMPLETE_TRAIT_DEFINITIONS[trait_name].domain
+            domain_min, domain_max = domain
+            # Normalize to 0-1 range based on actual domain
+            normalized = max(0.0, min(1.0, (trait_value - domain_min) / (domain_max - domain_min)))
+        else:
+            # Fallback for traits not in definitions (assume 0-10 scale)
+            normalized = max(0.0, min(1.0, trait_value / 10.0))
 
         # Scale to weight range
         return min_weight + normalized * (max_weight - min_weight)
@@ -144,35 +185,19 @@ class LanguageEvolutionFitness(CapabilityFitnessEvaluator):
     def evaluate_network(
         self,
         network: neat.nn.FeedForwardNetwork,
-        num_tests: int = 1000,  # Extensive testing for real intelligence
-        max_inputs: int = 8,  # Reasonable context window
+        num_tests: int = 100,
+        max_inputs: int = 4,  # Changed from 2 to 4 to match NEAT config
     ) -> float:
         """
         Evaluate a neural network's language generation capability.
 
         Returns fitness score based on:
-        - Prediction accuracy (weighted by character rarity)
-        - Sequence coherence (penalizes repetitive predictions)
+        - Prediction accuracy
         - Output diversity
         - Trait-guided preferences
         """
         total_fitness = 0.0
         predictions = []
-        correct_predictions = 0
-
-        # Calculate character frequencies for weighting
-        corpus = self.training_data.text
-        char_counts = {}
-        for char in corpus:
-            char_counts[char] = char_counts.get(char, 0) + 1
-
-        total_chars = len(corpus)
-        char_weights = {}
-        for char, count in char_counts.items():
-            # Weight rarer characters more heavily
-            frequency = count / total_chars
-            char_weights[char] = 1.0 / (frequency + 0.1)
-
         test_sequences = self.training_data.get_training_sequences(num_tests)
 
         for input_seq, target in test_sequences:
@@ -189,38 +214,21 @@ class LanguageEvolutionFitness(CapabilityFitnessEvaluator):
             # Get network prediction
             output = network.activate(normalized_input)
 
-            # Use first output for character prediction (simple and reliable)
-            prediction_score = output[0] if len(output) > 0 else 0.0
-            predicted_char_idx = int(
-                abs(prediction_score) * self.training_data.vocab_size
-            )
+            # Use first output for character prediction
+            predicted_char_idx = int(output[0] * self.training_data.vocab_size)
             predicted_char_idx = max(
                 0, min(predicted_char_idx, self.training_data.vocab_size - 1)
             )
 
-            target_char = self.training_data.int_to_char[target]
-
             predictions.append(predicted_char_idx)
 
-            # Weighted accuracy: rarer characters worth more
-            weight = char_weights.get(target_char, 1.0)
-            accuracy_score = weight if predicted_char_idx == target else 0.0
+            # Accuracy component
+            accuracy_score = 1.0 if predicted_char_idx == target else 0.0
+
+            # Add to fitness
             total_fitness += accuracy_score * self.accuracy_weight
-            if predicted_char_idx == target:
-                correct_predictions += 1
 
-        # Penalize repetitive predictions (sequences of same character)
-        if predictions:
-            # Count consecutive repeats
-            consecutive_repeats = 0
-            for i in range(1, len(predictions)):
-                if predictions[i] == predictions[i - 1]:
-                    consecutive_repeats += 1
-
-            repetition_penalty = consecutive_repeats / len(predictions)
-            total_fitness *= 1.0 - repetition_penalty * 0.5
-
-        # Calculate diversity bonus (reward variety)
+        # Calculate diversity bonus
         if predictions:
             unique_predictions = len(set(predictions))
             max_diversity = min(len(predictions), self.training_data.vocab_size)
@@ -229,10 +237,139 @@ class LanguageEvolutionFitness(CapabilityFitnessEvaluator):
             )
             total_fitness += diversity_score * self.diversity_weight
 
-        # Normalize by number of tests
-        final_fitness = total_fitness / num_tests if num_tests > 0 else 0.0
+        # Apply Phase 1 Foundation Trait modifiers
+        base_fitness = total_fitness / num_tests if num_tests > 0 else 0.0
+        
+        # Critical Thinking - improves accuracy evaluation and reduces noise
+        base_fitness *= self.critical_thinking_weight
+        
+        # Additional critical thinking bonus for high accuracy
+        if diversity_score > 0 and len(predictions) > 5:
+            accuracy_rate = sum(1 for i, (input_seq, target) in enumerate(test_sequences[:num_tests]) 
+                               if predictions[i] == target) / len(predictions)
+            if accuracy_rate > 0.3:  # Reward critical thinking for good performance
+                critical_bonus = (self.critical_thinking_weight - 1.0) * accuracy_rate * 0.1
+                base_fitness += critical_bonus
+        
+        # Pattern Recognition - enhances learning from sequences  
+        pattern_bonus = self.pattern_recognition_weight - 1.0
+        base_fitness += pattern_bonus * 0.1  # Small additive bonus
+        
+        # Common Sense - prevents nonsensical predictions (measured by consistency)
+        if len(predictions) > 1:
+            consistency = 1.0 - (len(set(predictions)) / len(predictions))
+            common_sense_bonus = consistency * (self.common_sense_weight - 1.0) * 0.05
+            base_fitness += common_sense_bonus
+        
+        # Resilience - maintains performance under variation (no penalty for now)
+        base_fitness *= self.resilience_weight
+        
+        # Adaptability - helps with diverse training examples
+        if diversity_score > 0.5:  # Reward adaptable agents for diversity
+            adaptability_bonus = (self.adaptability_weight - 1.0) * diversity_score * 0.1
+            base_fitness += adaptability_bonus
 
-        return final_fitness
+        # Apply Phase 2 Reasoning Enhancement modifiers
+        
+        # Causal Reasoning - improves understanding of input-output relationships
+        base_fitness *= self.causal_reasoning_weight
+        
+        # Abstract Thinking - enhances generalization beyond specific examples
+        if diversity_score > 0.3:  # Reward abstract thinking for generalization
+            abstract_bonus = (self.abstract_thinking_weight - 1.0) * diversity_score * 0.08
+            base_fitness += abstract_bonus
+        
+        # Temporal Reasoning - improves sequence understanding (core to language)
+        sequence_quality = 1.0 - abs(0.5 - diversity_score)  # Optimal diversity around 0.5
+        temporal_bonus = (self.temporal_reasoning_weight - 1.0) * sequence_quality * 0.12
+        base_fitness += temporal_bonus
+        
+        # Spatial Reasoning - less directly relevant to language, but helps with structure
+        base_fitness *= (0.9 + 0.1 * self.spatial_reasoning_weight)  # Smaller impact
+        
+        # Intuition - balances analytical with intuitive responses
+        if len(predictions) > 3:
+            # Measure response consistency as proxy for intuitive coherence
+            prediction_variance = len(set(predictions)) / len(predictions)
+            intuition_modifier = 1.0 + (self.intuition_weight - 1.0) * (1.0 - prediction_variance) * 0.05
+            base_fitness *= intuition_modifier
+
+        # Apply Phase 3 Social & Emotional Intelligence modifiers
+        
+        # Emotional Intelligence - improves overall communication effectiveness
+        base_fitness *= self.emotional_intelligence_weight
+        
+        # Empathy - enhances understanding and responsiveness (rewards consistent patterns)
+        if len(predictions) > 5:
+            # Higher empathy should produce more contextually appropriate responses
+            contextual_appropriateness = 1.0 - abs(0.4 - diversity_score)  # Optimal around 0.4
+            empathy_bonus = (self.empathy_weight - 1.0) * contextual_appropriateness * 0.06
+            base_fitness += empathy_bonus
+        
+        # Self-Awareness - prevents overconfidence and improves calibration
+        if diversity_score > 0.2:  # Only when agent shows some variation
+            # Self-aware agents should show appropriate uncertainty
+            uncertainty_appropriateness = min(diversity_score, 1.0 - diversity_score) * 2  # Peak at 0.5
+            self_awareness_bonus = (self.self_awareness_weight - 1.0) * uncertainty_appropriateness * 0.04
+            base_fitness += self_awareness_bonus
+        
+        # Trustworthiness - rewards consistency and reliability
+        if len(predictions) > 1:
+            # More trustworthy agents should show consistent quality
+            consistency_score = 1.0 - (len(set(predictions)) / len(predictions))
+            trustworthiness_bonus = (self.trustworthiness_weight - 1.0) * consistency_score * 0.08
+            base_fitness += trustworthiness_bonus
+        
+        # Cooperation - enhances collaborative potential (measured via adaptability to corpus)
+        if diversity_score > 0.1 and diversity_score < 0.8:  # Balanced cooperation
+            cooperation_modifier = 1.0 + (self.cooperation_weight - 1.0) * 0.05
+            base_fitness *= cooperation_modifier
+
+        # Apply Phase 4 Advanced Capabilities & Governance modifiers
+        
+        # Conflict Resolution - improves handling of contradictory inputs
+        if len(predictions) > 3:
+            # Measure ability to balance different response patterns
+            balance_score = 1.0 - abs(0.5 - diversity_score)  # Optimal balance at 0.5
+            conflict_bonus = (self.conflict_resolution_weight - 1.0) * balance_score * 0.05
+            base_fitness += conflict_bonus
+        
+        # Cultural Intelligence - enhances contextual adaptation
+        base_fitness *= self.cultural_intelligence_weight
+        
+        # Leadership - amplifies overall performance (multiplicative effect)
+        leadership_multiplier = 1.0 + (self.leadership_weight - 1.0) * 0.08
+        base_fitness *= leadership_multiplier
+        
+        # Negotiation - optimizes for win-win outcomes (balanced diversity)
+        if diversity_score > 0.3 and diversity_score < 0.7:  # Sweet spot for negotiation
+            negotiation_bonus = (self.negotiation_weight - 1.0) * 0.06
+            base_fitness += negotiation_bonus
+        
+        # Goal Orientation - enhances task completion focus
+        base_fitness *= self.goal_orientation_weight
+        
+        # Autonomy - enables independent operation (reduces supervision needs)
+        if diversity_score > 0.2:  # Only when showing independent variation
+            autonomy_bonus = (self.autonomy_weight - 1.0) * 0.07
+            base_fitness += autonomy_bonus
+        
+        # Humor - improves engagement and communication effectiveness
+        if len(predictions) > 5:
+            # Appropriate humor requires contextual awareness
+            humor_appropriateness = min(diversity_score * 2, 1.0)  # Scale up to 0.5 -> 1.0
+            humor_bonus = (self.humor_weight - 1.0) * humor_appropriateness * 0.04
+            base_fitness += humor_bonus
+        
+        # Ethical Reasoning - ensures responsible AI behavior
+        base_fitness *= self.ethical_reasoning_weight
+        
+        # Advanced Creativity - promotes novel solution generation
+        if diversity_score > 0.4:  # Higher threshold for advanced creativity
+            creativity_multiplier = 1.0 + (self.creativity_weight_advanced - 1.0) * diversity_score * 0.10
+            base_fitness *= creativity_multiplier
+
+        return max(0.0, base_fitness)  # Ensure non-negative fitness
 
     def evaluate_generation_quality(
         self,
@@ -281,26 +418,25 @@ class LanguageEvolutionFitness(CapabilityFitnessEvaluator):
             network, num_tests=10, max_inputs=max_inputs
         )
 
-        return EvaluationResult(
-            fitness_score=fitness_score,
-            sample_outputs={
+        return {
+            "final_fitness": fitness_score,
+            "sample_generation": {
                 "generated_text": generated_text,
                 "seed_text": seed_text,
             },
-            performance_metrics={
+            "performance_metrics": {
                 "length": len(generated_text),
                 "unique_chars": len(set(generated_text)),
                 "vocab_coverage": len(set(generated_text))
                 / self.training_data.vocab_size,
             },
-            evaluation_metadata={"max_length": max_length, "max_inputs": max_inputs},
-        )
+            "evaluation_metadata": {"max_length": max_length, "max_inputs": max_inputs},
+        }
 
 
 class LanguageTrainingPipeline(CapabilityTrainingPipeline):
     """
-    Complete pipeline for evolving language capabilities in constitutional
-    agents.
+    Complete pipeline for evolving language capabilities in constitutional agents.
 
     Progressive training stages:
     1. Character prediction (foundation)
@@ -314,8 +450,7 @@ class LanguageTrainingPipeline(CapabilityTrainingPipeline):
         Initialize language training pipeline.
 
         Args:
-            training_text: Text corpus for training (e.g., Shakespeare,
-                news, etc.)
+            training_text: Text corpus for training (e.g., Shakespeare, news, etc.)
             agent_identity: Constitutional agent to train
         """
         self.agent_identity = agent_identity
@@ -332,64 +467,19 @@ class LanguageTrainingPipeline(CapabilityTrainingPipeline):
         return LanguageEvolutionFitness(self.training_data, self.agent_identity)
 
     def get_neat_config_params(self):
-        """Return NEAT config parameters optimized for language evolution."""
-        # Get constitutional traits to dynamically scale network parameters
-        constitution = self.agent_identity.constitution_result.constitution
-
-        # Base network sizes - START MINIMAL, let evolution build
-        base_inputs = 4  # Minimal inputs to start
-        base_outputs = 1  # Single output for language generation
-        base_hidden = 0  # NO hidden nodes initially - let evolution add them
-        base_max_nodes = 2000  # Allow massive growth (was 150)
-
-        # Scale based on constitutional traits
-        innovation_drive = float(constitution.get("Innovation_Drive", "0.5"))
-        curiosity = float(constitution.get("Curiosity", "0.5"))
-        working_memory = float(constitution.get("Working_Memory", "0.5"))
-        attention_span = float(constitution.get("AttentionSpan", "0.5"))
-        learning_rate = float(constitution.get("Learning_Rate", "0.5"))
-
-        # Calculate dynamic network parameters
-        # Higher innovation/curiosity = more complex networks
-        complexity_factor = (innovation_drive + curiosity) / 2.0
-
-        # Higher working memory/attention = larger networks
-        capacity_factor = (working_memory + attention_span) / 2.0
-
-        # Learning rate affects network stability vs adaptability
-        adaptability_factor = learning_rate
-
-        # Dynamic parameter calculation - minimal starting, high growth potential
-        num_inputs = base_inputs  # Fixed minimal start
-        num_outputs = base_outputs  # Fixed minimal start
-        initial_hidden_nodes = base_hidden  # Always start with 0 hidden nodes
-        max_nodes = int(base_max_nodes * (1.0 + capacity_factor * 2.0))  # 2000-4000
-
-        # Population size scales with network complexity potential
-        pop_size = int(800 + (complexity_factor * 600))  # 800-1400
-
-        # Store for consistent use everywhere
-        self.calculated_inputs = 4  # Match minimal starting inputs
-
+        """Return NEAT config parameters for language evolution."""
+        # Example: population size and network structure can be trait-driven
+        # For now, return some reasonable defaults
         return {
-            "pop_size": pop_size,
-            "num_inputs": num_inputs,
-            "num_outputs": num_outputs,
-            "initial_hidden_nodes": initial_hidden_nodes,
-            "max_nodes": max_nodes,
+            "pop_size": 150,
+            "num_inputs": 4,
+            "num_outputs": 1,
             "activation": "sigmoid",
-            "fitness_threshold": 0.8,
-            "max_stagnation": 100,
-            "species_elitism": 5,
-            "elitism": 10,
-            "survival_threshold": 0.3,
-            "node_add_prob": 0.3,  # High probability to add nodes
-            "conn_add_prob": 0.5,  # High probability to add connections
+            "fitness_threshold": 0.95,
         }
 
     def get_relevant_traits(self):
-        """Return list of constitutional traits most relevant to
-        language capability."""
+        """Return list of constitutional traits most relevant to language capability."""
         return [
             "Innovation_Drive",
             "Curiosity",
@@ -408,32 +498,15 @@ class LanguageTrainingPipeline(CapabilityTrainingPipeline):
                     # Create network
                     network = neat.nn.FeedForwardNetwork.create(genome, config)
 
-                    # Log network stats for diagnosis
-                    num_nodes = len(genome.nodes)
-                    num_connections = len(genome.connections)
-                    print(
-                        f"Genome {genome_id}: {num_nodes} nodes, {num_connections} connections"
-                    )
-
-                    # Evaluate language capability
+                    # Evaluate language capability (use 4 input limit to match NEAT config)
                     fitness = self.fitness_evaluator.evaluate_network(
-                        network,
-                        max_inputs=getattr(self, "calculated_inputs", 10),
-                        num_tests=500,
+                        network, max_inputs=4
                     )
 
                     # Assign fitness
                     genome.fitness = fitness
-                    print(f"Genome {genome_id}: fitness = {fitness:.4f}")
 
                 except Exception as e:
-                    # Log the actual error instead of silently failing
-                    print(f"ERROR in genome {genome_id}: {str(e)}")
-                    print(f"  Exception type: {type(e).__name__}")
-                    import traceback
-
-                    traceback.print_exc()
-
                     # Handle network creation/evaluation errors
                     genome.fitness = 0.0
 
@@ -454,24 +527,19 @@ class LanguageTrainingPipeline(CapabilityTrainingPipeline):
         )
         print(f"Training corpus: {len(self.training_data.text)} characters")
         print(f"Vocabulary size: {self.training_data.vocab_size}")
-        print("Constitutional traits influencing training:")
-        innovation = self.agent_identity.constitution_result.constitution.get(
-            "Innovation_Drive", "N/A"
+        print(f"Constitutional traits influencing training:")
+        print(
+            f"  - Innovation Drive: {self.agent_identity.constitution_result.constitution.get('Innovation_Drive', 'N/A')}"
         )
-        curiosity = self.agent_identity.constitution_result.constitution.get(
-            "Curiosity", "N/A"
+        print(
+            f"  - Curiosity: {self.agent_identity.constitution_result.constitution.get('Curiosity', 'N/A')}"
         )
-        print(f"  - Innovation Drive: {innovation}")
-        print(f"  - Curiosity: {curiosity}")
         print(
             f"  - Learning Rate: {self.agent_identity.constitution_result.constitution.get('Learning_Rate', 'N/A')}"
         )
 
         # Configure NEAT for language task
-        config_params = self.get_neat_config_params()
-        config_file = self.neat_runner.create_neat_config_file(
-            "language_config.txt", config_params
-        )
+        config_file = self.neat_runner.create_neat_config_file("language_config.txt")
 
         # Create fitness function
         fitness_func = self.create_fitness_function()
@@ -495,17 +563,12 @@ class LanguageTrainingPipeline(CapabilityTrainingPipeline):
 
         # Evaluate final capability
         final_fitness = self.fitness_evaluator.evaluate_network(
-            best_network,
-            num_tests=500,
-            max_inputs=getattr(self, "calculated_inputs", 4),
+            best_network, num_tests=200, max_inputs=4
         )
 
         # Generate sample text
         sample_generation = self.fitness_evaluator.evaluate_generation_quality(
-            best_network,
-            seed_text="Intelligence test",
-            max_length=200,
-            max_inputs=getattr(self, "calculated_inputs", 4),
+            best_network, seed_text="Test", max_length=100, max_inputs=4
         )
 
         # Cleanup
@@ -516,8 +579,7 @@ class LanguageTrainingPipeline(CapabilityTrainingPipeline):
 
         return {
             "agent_id": self.agent_identity.id_hash,
-            "identity_bundle": self.agent_identity,
-            # Include identity for persistence
+            "identity_bundle": self.agent_identity,  # Include identity for persistence
             "final_fitness": final_fitness,
             "best_genome": best_genome,
             "best_network": best_network,
@@ -552,26 +614,16 @@ def _get_fallback_corpus() -> str:
     """Fallback corpus if corpus_loader isn't available."""
     return (
         """
-    The quick brown fox jumps over the lazy dog. This sentence contains every
-    letter of the alphabet.
-    Language is a powerful tool for communication. Through words, we share
-    ideas, emotions, and knowledge.
-    Artificial intelligence systems can learn to understand and generate
-    human language.
-    Evolution shapes both biological and artificial intelligence through
-    selection pressure.
-    Constitutional traits guide how agents learn and develop their
-    capabilities over time.
-    Creative agents explore diverse solutions while analytical agents focus
-    on precision.
-    The relationship between genetics and behavior manifests in both DNA and
-    digital genomes.
-    Learning is not just memorization but the development of genuine
-    understanding and capability.
-    Each agent develops its own unique style based on its constitutional
-    personality.
-    Through practice and evolution, simple networks can develop
-    sophisticated language abilities.
+    The quick brown fox jumps over the lazy dog. This sentence contains every letter of the alphabet.
+    Language is a powerful tool for communication. Through words, we share ideas, emotions, and knowledge.
+    Artificial intelligence systems can learn to understand and generate human language.
+    Evolution shapes both biological and artificial intelligence through selection pressure.
+    Constitutional traits guide how agents learn and develop their capabilities over time.
+    Creative agents explore diverse solutions while analytical agents focus on precision.
+    The relationship between genetics and behavior manifests in both DNA and digital genomes.
+    Learning is not just memorization but the development of genuine understanding and capability.
+    Each agent develops its own unique style based on its constitutional personality.
+    Through practice and evolution, simple networks can develop sophisticated language abilities.
     """
         * 50  # Increased repetition for more training data
     )
@@ -600,5 +652,5 @@ def train_agent_language_capability(
     pipeline = LanguageTrainingPipeline(training_text, agent_identity)
 
     # Use CPU training (optimal for NEAT evolution)
-    print("Using CPU training (optimal for NEAT)...")
+    print("Using CPU training for language capability...")
     return pipeline.train_language_capability(generations)

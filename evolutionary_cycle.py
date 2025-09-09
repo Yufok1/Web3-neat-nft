@@ -25,6 +25,11 @@ from constitutional_ai import (
     create_agent_identity,
     COMPLETE_TRAIT_DEFINITIONS,
 )
+from constitutional_ai.governance import (
+    GovernanceManager, 
+    GovernanceExecutor,
+    create_governance_manager_from_agent_list
+)
 
 
 class EvolutionaryCycle:
@@ -36,31 +41,41 @@ class EvolutionaryCycle:
         min_fitness_threshold: float = 0.05,
         prune_percentage: float = 0.3,
         escalation_factor: float = 2.0,
+        enable_governance: bool = True,
     ):
         """
-        Initialize evolutionary cycle.
+        Initialize evolutionary cycle with optional governance control.
 
         Args:
-            target_population: Desired number of agents
-            min_fitness_threshold: Minimum fitness to survive
-            prune_percentage: Fraction of population to prune each cycle
-            escalation_factor: How much to increase training intensity
+            target_population: Initial desired number of agents
+            min_fitness_threshold: Initial minimum fitness to survive
+            prune_percentage: Initial fraction of population to prune each cycle
+            escalation_factor: Initial how much to increase training intensity
+            enable_governance: Whether to allow agents to vote on parameters
         """
+        # Initial parameters (can be overridden by governance)
         self.target_population = target_population
         self.min_fitness_threshold = min_fitness_threshold
         self.prune_percentage = prune_percentage
         self.escalation_factor = escalation_factor
+
+        # Governance system
+        self.enable_governance = enable_governance
+        self.governance_manager = None
+        self.governance_executor = GovernanceExecutor()
+        self.governance_cycle_interval = 3  # Vote every 3 cycles
 
         self.persistence = AgentPersistence()
         self.cycle_count = 0
         self.base_generations = 150  # SERIOUS training for actual intelligence
         self.current_generations = self.base_generations
 
-        print("EVOLUTIONARY CYCLE INITIALIZED")
-        print(f"Target Population: {target_population}")
-        print(f"Min Fitness: {min_fitness_threshold}")
-        print(f"Prune Rate: {prune_percentage:.1%}")
+        print("GOVERNANCE-ENABLED EVOLUTIONARY CYCLE INITIALIZED")
+        print(f"Target Population: {target_population} (governance can modify)")
+        print(f"Min Fitness: {min_fitness_threshold} (governance can modify)")
+        print(f"Prune Rate: {prune_percentage:.1%} (governance can modify)")
         print(f"Starting Training Intensity: {self.current_generations} generations")
+        print(f"Governance System: {'ENABLED' if enable_governance else 'DISABLED'}")
         print("=" * 60)
 
     def get_agent_roster(self) -> List[Dict[str, Any]]:
@@ -101,6 +116,128 @@ class EvolutionaryCycle:
             # shutil.rmtree(f"agents/{agent_id}", ignore_errors=True)
 
         return survivors
+
+    def conduct_governance_vote(self, roster: List[Dict[str, Any]]) -> None:
+        """Conduct governance votes to adjust evolutionary parameters."""
+        if not self.enable_governance or len(roster) < 3:
+            return  # Need at least 3 agents for meaningful governance
+
+        print(f"\n🏛️  GOVERNANCE SESSION - CYCLE {self.cycle_count}")
+        print("=" * 50)
+
+        # Initialize governance manager with current agents
+        agent_records = [agent_data["agent"] for agent_data in roster]
+        self.governance_manager = GovernanceManager(agent_records)
+
+        # Propose parameter adjustments based on population performance
+        proposals = self._generate_adaptive_proposals(roster)
+
+        for proposal in proposals:
+            print(f"\n📋 PROPOSAL: {proposal.title}")
+            result = self.governance_manager.conduct_vote(proposal)
+            
+            if result.passed:
+                print(f"✅ PROPOSAL PASSED - Executing changes...")
+                execution_result = self.governance_executor.execute_proposal(proposal, result)
+                
+                if execution_result["success"]:
+                    self._apply_governance_decision(proposal, execution_result)
+                else:
+                    print(f"❌ Execution failed: {execution_result.get('error', 'Unknown error')}")
+            else:
+                print(f"❌ PROPOSAL REJECTED by agent vote")
+
+        print("=" * 50)
+
+    def _generate_adaptive_proposals(self, roster: List[Dict[str, Any]]) -> List:
+        """Generate proposals based on current population performance."""
+        proposals = []
+        
+        if not roster:
+            return proposals
+
+        avg_fitness = sum(agent["fitness"] for agent in roster) / len(roster)
+        fitness_variance = sum((agent["fitness"] - avg_fitness) ** 2 for agent in roster) / len(roster)
+        
+        print(f"📊 Population Analysis:")
+        print(f"   Average Fitness: {avg_fitness:.3f}")
+        print(f"   Fitness Variance: {fitness_variance:.4f}")
+        print(f"   Population Size: {len(roster)}")
+
+        # Proposal 1: Adjust fitness threshold based on performance
+        if avg_fitness > self.min_fitness_threshold * 2:
+            # Population is doing well, raise standards
+            new_threshold = min(self.min_fitness_threshold * 1.5, 0.8)
+            proposal = self.governance_manager.propose_breeding_rule_change(
+                rule_name="fitness_threshold",
+                new_parameters={"min_fitness_threshold": new_threshold},
+                description=f"Raise fitness threshold from {self.min_fitness_threshold:.3f} to {new_threshold:.3f} due to strong population performance"
+            )
+            proposals.append(proposal)
+        elif avg_fitness < self.min_fitness_threshold * 0.5:
+            # Population struggling, lower standards
+            new_threshold = max(self.min_fitness_threshold * 0.8, 0.01)
+            proposal = self.governance_manager.propose_breeding_rule_change(
+                rule_name="fitness_threshold", 
+                new_parameters={"min_fitness_threshold": new_threshold},
+                description=f"Lower fitness threshold from {self.min_fitness_threshold:.3f} to {new_threshold:.3f} to help struggling population"
+            )
+            proposals.append(proposal)
+
+        # Proposal 2: Adjust population size based on diversity
+        if len(roster) < self.target_population * 0.7:
+            # Population too small
+            new_size = min(int(self.target_population * 1.3), 50)
+            proposal = self.governance_manager.propose_population_size_change(
+                new_size=new_size,
+                reason=f"Increase population from {len(roster)} to {new_size} to improve genetic diversity"
+            )
+            proposals.append(proposal)
+        elif len(roster) > self.target_population * 1.5:
+            # Population too large
+            new_size = max(int(self.target_population * 0.8), 10)
+            proposal = self.governance_manager.propose_population_size_change(
+                new_size=new_size,
+                reason=f"Reduce population from {len(roster)} to {new_size} to focus resources on quality"
+            )
+            proposals.append(proposal)
+
+        # Proposal 3: Adjust training intensity based on learning progress
+        if self.cycle_count > 5 and fitness_variance < 0.01:  # Low variance = population converged
+            new_generations = min(int(self.current_generations * 1.5), 500)
+            proposal = self.governance_manager.propose_system_parameter_change(
+                parameter_name="training_intensity",
+                new_parameters={"generations": new_generations},
+                description=f"Increase training from {self.current_generations} to {new_generations} generations due to population convergence"
+            )
+            proposals.append(proposal)
+
+        return proposals
+
+    def _apply_governance_decision(self, proposal, execution_result) -> None:
+        """Apply governance decision to system parameters."""
+        proposal_type = proposal.proposal_type
+        changes = execution_result.get("changes", {})
+
+        if proposal_type == "breeding_rule":
+            if "min_fitness_threshold" in changes:
+                old_threshold = self.min_fitness_threshold
+                self.min_fitness_threshold = changes["min_fitness_threshold"]
+                print(f"🎯 Fitness threshold: {old_threshold:.3f} → {self.min_fitness_threshold:.3f}")
+
+        elif proposal_type == "population_size":
+            if "new_size" in changes:
+                old_size = self.target_population
+                self.target_population = changes["new_size"]
+                print(f"👥 Target population: {old_size} → {self.target_population}")
+
+        elif proposal_type == "system_parameter":
+            if "generations" in changes:
+                old_generations = self.current_generations
+                self.current_generations = changes["generations"]
+                print(f"🔄 Training generations: {old_generations} → {self.current_generations}")
+
+        print(f"📝 Governance decision applied successfully!")
 
     def breed_new_agents(self, roster: List[Dict[str, Any]], num_offspring: int) -> int:
         """Breed new agents from top performers."""
@@ -228,6 +365,13 @@ class EvolutionaryCycle:
         # Seed population if needed
         self.seed_initial_population()
         roster = self.get_agent_roster()  # Refresh after seeding
+
+        # Conduct governance vote every N cycles
+        if (self.cycle_count % self.governance_cycle_interval == 0 and 
+            self.enable_governance and len(roster) >= 3):
+            self.conduct_governance_vote(roster)
+            # Refresh roster after potential governance changes
+            roster = self.get_agent_roster()
 
         # Prune weak agents (but keep minimum viable population)
         if len(roster) > 5:
