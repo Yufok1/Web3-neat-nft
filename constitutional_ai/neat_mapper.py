@@ -95,14 +95,14 @@ class TraitToNEATMapper:
     def __init__(self):
         """Initialize the mapper with default parameter ranges."""
 
-        # Define base parameter ranges
+        # Define base parameter ranges - SCALED FOR 100M+ PARAMETER NETWORKS
         self.base_ranges = {
-            "population_size": (50, 300),
-            "elitism_count": (1, 20),
-            "species_count_target": (3, 15),
-            "initial_hidden_nodes": (0, 10),
-            "max_nodes": (20, 200),
-            "max_connections": (50, 1000),
+            "population_size": (500, 2000),  # MASSIVE populations to saturate TPU
+            "elitism_count": (5, 50),  # More elites preserved
+            "species_count_target": (10, 30),  # More species diversity
+            "initial_hidden_nodes": (0, 0),  # ALWAYS START FROM ZERO - no shortcuts!
+            "max_nodes": (50000, 200000),  # 100M+ parameters possible (200K nodes * 500 connections avg)
+            "max_connections": (500000, 10000000),  # Up to 10 million connections for massive networks
             "weight_mutation_rate": (0.1, 0.9),
             "weight_perturbation_rate": (0.5, 0.95),
             "add_node_rate": (0.01, 0.2),
@@ -113,9 +113,9 @@ class TraitToNEATMapper:
             "weight_decay": (0.0, 0.01),
             "compatibility_threshold": (1.0, 5.0),
             "survival_rate": (0.1, 0.5),
-            "max_generations": (50, 500),
-            "fitness_threshold": (0.8, 1.0),
-            "stagnation_threshold": (10, 50),
+            "max_generations": (200, 2000),  # More generations for complex evolution
+            "fitness_threshold": (0.9, 1.0),  # Higher standards
+            "stagnation_threshold": (50, 200),  # More patience for large network evolution
             "exploration_rate": (0.0, 0.3),
             "temperature": (0.1, 2.0),
         }

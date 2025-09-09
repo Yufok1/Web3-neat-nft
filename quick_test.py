@@ -58,8 +58,7 @@ def test_constitutional_system():
         print(f"   ✅ NEAT config generated: {config_file}")
 
         # Test 5: All Stabilization Types
-        print("\n5. Testing Stabilization Types...")
-        from constitutional_ai.genome import StabilizationType
+        print("\\n5. Testing Stabilization Types...")
 
         all_types = set()
         for _ in range(20):  # Create multiple genomes to see all types
@@ -131,7 +130,7 @@ def test_learning_capability():
             seed_closure=123,
         )
 
-        print(f"\n✅ Evolution complete!")
+        print("\\n✅ Evolution complete!")
         print(f"🎯 Final fitness: {result['final_fitness']:.3f}")
         print(f"🤖 Agent ID: {result['identity'].id_hash[:12]}...")
 

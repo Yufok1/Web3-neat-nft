@@ -34,25 +34,68 @@ class ConstitutionalNEATRunner:
         self.population = None
         self.best_genome = None
 
-    def create_neat_config_file(self, filename: str = "neat_config.txt") -> str:
+    def create_neat_config_file(
+        self,
+        filename: str = "neat_config.txt",
+        config_params: Optional[Dict[str, Any]] = None,
+    ) -> str:
         """
         Create a NEAT configuration file from constitutional traits.
 
         Args:
             filename: Name for the config file
+            config_params: Optional dictionary of config parameters to override defaults
 
         Returns:
             Path to the created config file
         """
+        # Use provided config_params or fall back to identity config
+        if config_params is None:
+            config_params = {}
+
+        # Extract parameters with fallbacks
+        pop_size = config_params.get("pop_size", self.neat_config.population_size)
+        activation = config_params.get(
+            "activation", self.neat_config.activation_function
+        )
+        conn_add_prob = config_params.get(
+            "conn_add_prob", 0.5  # Higher probability to add connections
+        )
+        conn_delete_prob = config_params.get(
+            "conn_delete_prob", self.neat_config.remove_connection_rate
+        )
+        node_add_prob = config_params.get(
+            "node_add_prob", 0.3  # Higher probability to add nodes
+        )
+        num_hidden = config_params.get(
+            "initial_hidden_nodes", 0  # Start with NO hidden nodes
+        )
+        num_inputs = config_params.get("num_inputs", 4)  # Minimal inputs
+        num_outputs = config_params.get("num_outputs", 1)  # Single output
+        weight_mutate_rate = config_params.get(
+            "weight_mutation_rate", self.neat_config.weight_mutation_rate
+        )
+        compatibility_threshold = config_params.get(
+            "compatibility_threshold", self.neat_config.compatibility_threshold
+        )
+        elitism_count = config_params.get("elitism", self.neat_config.elitism_count)
+        survival_rate = config_params.get(
+            "survival_threshold", self.neat_config.survival_rate
+        )
+        fitness_threshold = config_params.get("fitness_threshold", 100.0)
+        max_stagnation = config_params.get("max_stagnation", 20)
+        species_elitism = config_params.get(
+            "species_elitism", self.neat_config.elitism_count
+        )
         config_content = f"""[NEAT]
 fitness_criterion     = max
-fitness_threshold     = 100.0
-pop_size              = {self.neat_config.population_size}
+fitness_threshold     = {fitness_threshold}
+pop_size              = {pop_size}
 reset_on_extinction   = False
 
 [DefaultGenome]
 # node activation options
-activation_default      = {self.neat_config.activation_function}
+activation_default      = {activation}
 activation_mutate_rate  = 0.1
 activation_options      = tanh sigmoid relu
 
@@ -75,24 +118,24 @@ compatibility_disjoint_coefficient = 1.0
 compatibility_weight_coefficient   = 0.5
 
 # connection add/remove rates
-conn_add_prob           = {self.neat_config.add_connection_rate}
-conn_delete_prob        = {self.neat_config.remove_connection_rate}
+conn_add_prob           = {conn_add_prob}
+conn_delete_prob        = {conn_delete_prob}
 
 # connection enable options
 enabled_default         = True
 enabled_mutate_rate     = 0.01
 
 feed_forward            = True
-initial_connection      = full_nodirect
+initial_connection      = unconnected
 
 # node add/remove rates
-node_add_prob           = {self.neat_config.add_node_rate}
+node_add_prob           = {node_add_prob}
 node_delete_prob        = 0.0
 
 # network parameters
-num_hidden              = {self.neat_config.initial_hidden_nodes}
-num_inputs              = 4
-num_outputs             = 2
+num_hidden              = {num_hidden}
+num_inputs              = {num_inputs}
+num_outputs             = {num_outputs}
 
 # node response options
 response_init_mean      = 1.0
@@ -109,20 +152,20 @@ weight_init_stdev       = 1.0
 weight_max_value        = 30
 weight_min_value        = -30
 weight_mutate_power     = 0.5
-weight_mutate_rate      = {self.neat_config.weight_mutation_rate}
+weight_mutate_rate      = {weight_mutate_rate}
 weight_replace_rate     = 0.1
 
 [DefaultSpeciesSet]
-compatibility_threshold = {self.neat_config.compatibility_threshold}
+compatibility_threshold = {compatibility_threshold}
 
 [DefaultStagnation]
 species_fitness_func = max
-max_stagnation       = 20
-species_elitism      = {self.neat_config.elitism_count}
+max_stagnation       = {max_stagnation}
+species_elitism      = {species_elitism}
 
 [DefaultReproduction]
-elitism            = {self.neat_config.elitism_count}
-survival_threshold = {self.neat_config.survival_rate}
+elitism            = {elitism_count}
+survival_threshold = {survival_rate}
 """
 
         config_path = os.path.abspath(filename)
@@ -187,10 +230,10 @@ survival_threshold = {self.neat_config.survival_rate}
 
         # Replace input/output counts
         content = content.replace(
-            "num_inputs              = 4", f"num_inputs              = {num_inputs}"
+            "num_inputs              = 9", f"num_inputs              = {num_inputs}"
         )
         content = content.replace(
-            "num_outputs             = 2", f"num_outputs             = {num_outputs}"
+            "num_outputs             = 4", f"num_outputs             = {num_outputs}"
         )
 
         with open(self.config_file, "w") as f:

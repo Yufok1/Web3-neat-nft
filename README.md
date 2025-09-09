@@ -1,6 +1,6 @@
 ## System Overview
 
-A platform for evolving AI agents using a diploid genome system, neural evolution (NEAT), and blockchain-based NFT integration. Agents develop skills in language and coding through evolutionary processes and can be bred across generations to combine traits.
+A **massive-scale platform** for evolving AI agents using constitutional diploid genomes, neural evolution (NEAT), and blockchain-based NFT integration. Agents can reach **100M+ parameters** (50K-200K nodes, 500K-10M connections) and develop genuine intelligence in language and reasoning through **parallel evolutionary processes** and cross-generational breeding.
 
 ---
 

@@ -122,7 +122,7 @@ def show_top_agents():
                     id2 = agent_ids[j][:8]
                     print(f"python agent_browser.py breed {id1} {id2}")
 
-            print(f"\nTRAINING COMMANDS (Language Focus):")
+            print("\\nTRAINING COMMANDS (Language Focus):")
             print("-" * 32)
 
             # Show training commands for all agents
