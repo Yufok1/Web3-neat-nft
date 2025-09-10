@@ -27,7 +27,7 @@ except ImportError:
 class CorpusConfig:
     """Configuration for corpus loading."""
 
-    language_corpus_size: int = 10_000_000  # 10MB of text
+    language_corpus_size: int = 50_000_000  # 50MB of text (increased from 10MB)
     coding_corpus_size: int = 5_000_000  # 5MB of code
     cache_dir: str = "corpus_cache"
     min_text_length: int = 100
@@ -396,41 +396,208 @@ class LanguageCorpusLoader:
         return substantial_corpus
 
     def get_mixed_corpus(self) -> str:
-        """Get a mixed corpus combining multiple sources."""
-        print("Loading mixed language corpus...")
+        """Get a mixed corpus combining multiple reliable sources for MASSIVE training."""
+        print("Loading MASSIVE mixed language corpus...")
 
         corpora = []
+        target_size = 25_000_000  # 25 million characters target
+        current_size = 0
 
-        # Try to load from multiple sources
-        wiki_corpus = self.load_wikipedia_corpus()
-        if len(wiki_corpus) > 10000:
-            corpora.append(wiki_corpus[: self.config.language_corpus_size // 3])
-
+        # Always include conversational training data first (most important for word-level training)
         try:
-            web_corpus = self.load_openwebtext_corpus()
-            if len(web_corpus) > 10000:
-                corpora.append(web_corpus[: self.config.language_corpus_size // 3])
-        except BaseException:
-            pass
+            conv_corpus = self._load_conversational_training()
+            if conv_corpus:
+                corpora.append(conv_corpus)
+                current_size += len(conv_corpus)
+                print(
+                    f"✓ Loaded conversational training data: {len(conv_corpus):,} chars (Total: {current_size:,})"
+                )
+        except Exception as e:
+            print(f"⚠️  Failed to load conversational data: {e}")
 
-        try:
-            books_corpus = self.load_books_corpus()
-            if len(books_corpus) > 10000:
-                corpora.append(books_corpus[: self.config.language_corpus_size // 3])
-        except BaseException:
-            pass
+        # Load Wikipedia (most reliable) - take as much as possible
+        if current_size < target_size:
+            try:
+                wiki_corpus = self.load_wikipedia_corpus()
+                if len(wiki_corpus) > 1000:
+                    # Take up to 1M chars from Wikipedia
+                    wiki_take = min(
+                        len(wiki_corpus), max(1_000_000, target_size - current_size)
+                    )
+                    corpora.append(wiki_corpus[:wiki_take])
+                    current_size += wiki_take
+                    print(
+                        f"✓ Loaded Wikipedia corpus: {wiki_take:,} chars (Total: {current_size:,})"
+                    )
+            except Exception as e:
+                print(f"⚠️  Failed to load Wikipedia: {e}")
+
+        # Try modern, working datasets - take as much as possible
+        if current_size < target_size:
+            try:
+                modern_corpus = self._load_modern_datasets(
+                    target_chars=target_size - current_size
+                )
+                if modern_corpus:
+                    corpora.append(modern_corpus)
+                    current_size += len(modern_corpus)
+                    print(
+                        f"✓ Loaded modern dataset: {len(modern_corpus):,} chars (Total: {current_size:,})"
+                    )
+            except Exception as e:
+                print(f"⚠️  Failed to load modern datasets: {e}")
+
+        # Try additional datasets for even more data - take as much as possible
+        if current_size < target_size:
+            try:
+                extra_corpus = self._load_extra_datasets(
+                    target_chars=target_size - current_size
+                )
+                if extra_corpus:
+                    corpora.append(extra_corpus)
+                    current_size += len(extra_corpus)
+                    print(
+                        f"✓ Loaded extra dataset: {len(extra_corpus):,} chars (Total: {current_size:,})"
+                    )
+            except Exception as e:
+                print(f"⚠️  Failed to load extra datasets: {e}")
+
+        # Try OpenWebText for more data
+        if current_size < target_size:
+            try:
+                openweb_corpus = self.load_openwebtext_corpus()
+                if len(openweb_corpus) > 1000:
+                    openweb_take = min(len(openweb_corpus), target_size - current_size)
+                    corpora.append(openweb_corpus[:openweb_take])
+                    current_size += openweb_take
+                    print(
+                        f"✓ Loaded OpenWebText corpus: {openweb_take:,} chars (Total: {current_size:,})"
+                    )
+            except Exception as e:
+                print(f"⚠️  Failed to load OpenWebText: {e}")
 
         # Combine all corpora
         if corpora:
             mixed_corpus = "\n\n".join(corpora)
             print(
-                f"Mixed corpus created: {
-                    len(mixed_corpus):,} characters from {
-                    len(corpora)} sources"
+                f"🎯 MASSIVE Mixed corpus created: {len(mixed_corpus):,} characters from {len(corpora)} sources"
             )
+            print(f"📊 That's {len(mixed_corpus)/1_000_000:.2f} MB of training data!")
             return mixed_corpus
         else:
+            print("⚠️  No corpora loaded, using fallback")
             return self._get_fallback_language_corpus()
+
+    def _load_conversational_training(self) -> str:
+        """Load the conversational training data we created."""
+        conv_file = os.path.join(self.config.cache_dir, "conversational_training.txt")
+        if os.path.exists(conv_file):
+            with open(conv_file, "r", encoding="utf-8") as f:
+                content = f.read()
+                # Repeat the conversational data to make it more prominent in training
+                return content * 20  # 20x repetition for better learning
+        return ""
+
+    def _load_modern_datasets(self, target_chars: int = 2_000_000) -> str:
+        """Load from modern, working datasets with target character count."""
+        if not HF_AVAILABLE:
+            return ""
+
+        # Try reliable, modern datasets - expanded list for more data
+        modern_datasets = [
+            ("wikitext", "wikitext-103-raw-v1", "text"),
+            ("tiny_shakespeare", None, "text"),
+            ("bookcorpusopen", None, "text"),  # Alternative book corpus
+            ("ag_news", None, "text"),  # News articles
+            ("cnn_dailymail", "3.0.0", "article"),  # News articles
+            ("xsum", None, "document"),  # Summarization dataset
+            ("squad", None, "context"),  # Question answering context
+        ]
+
+        for dataset_name, subset, text_field in modern_datasets:
+            try:
+                print(f"Trying modern dataset: {dataset_name}...")
+
+                if subset:
+                    dataset = load_dataset(
+                        dataset_name, subset, split="train", streaming=True
+                    )
+                else:
+                    dataset = load_dataset(dataset_name, split="train", streaming=True)
+
+                corpus_parts = []
+                total_chars = 0
+
+                for example in dataset:
+                    if text_field in example:
+                        text = example[text_field]
+                        if len(text) >= self.config.min_text_length:
+                            corpus_parts.append(text)
+                            total_chars += len(text)
+
+                            if total_chars >= target_chars:
+                                break
+
+                if corpus_parts:
+                    result = "\n\n".join(corpus_parts)
+                    print(f"✓ Got {len(result):,} chars from {dataset_name}")
+                    return result
+
+            except Exception as e:
+                print(f"Failed to load {dataset_name}: {e}")
+                continue
+
+        return ""
+
+    def _load_extra_datasets(self, target_chars: int = 1_000_000) -> str:
+        """Load additional datasets for maximum corpus size."""
+        if not HF_AVAILABLE:
+            return ""
+
+        # Additional datasets for even more training data - expanded list
+        extra_datasets = [
+            ("bookcorpus", None, "text"),
+            ("pg19", None, "text"),
+            ("openwebtext", None, "text"),
+            ("wikipedia", "20220301.en", "text"),
+            ("c4", "en", "text"),
+            ("pile-uncopyrighted", None, "text"),
+        ]
+
+        for dataset_name, subset, text_field in extra_datasets:
+            try:
+                print(f"Trying extra dataset: {dataset_name}...")
+
+                if subset:
+                    dataset = load_dataset(
+                        dataset_name, subset, split="train", streaming=True
+                    )
+                else:
+                    dataset = load_dataset(dataset_name, split="train", streaming=True)
+
+                corpus_parts = []
+                total_chars = 0
+
+                for example in dataset:
+                    if text_field in example:
+                        text = example[text_field]
+                        if len(text) >= self.config.min_text_length:
+                            corpus_parts.append(text)
+                            total_chars += len(text)
+
+                            if total_chars >= target_chars:
+                                break
+
+                if corpus_parts:
+                    result = "\n\n".join(corpus_parts)
+                    print(f"✓ Got {len(result):,} chars from {dataset_name}")
+                    return result
+
+            except Exception as e:
+                print(f"Failed to load extra {dataset_name}: {e}")
+                continue
+
+        return ""
 
 
 class CodingCorpusLoader:

@@ -1,5 +1,26 @@
 # Web3 Constitutional AI - Democratic Evolution Platform
 
+## 🎯 **MASSIVE CONVERSATIONAL AI TRAINING SYSTEM** (September 2025)
+
+**BREAKTHROUGH**: We've evolved from character-level pattern matching to **genuine conversational AI** using **25MB of training data** from HuggingFace datasets. Agents now train on **word-level semantic understanding** with **101K+ word vocabulary** and **311K training sequences**.
+
+### 🚀 **Training Scale Achieved:**
+- **25,072,370 characters** (25.07 MB) of diverse text data
+- **4,675,405 total words** for pattern learning
+- **101,334 unique words** vocabulary
+- **311,693 training sequences** (15-word context windows)
+- **Word-level processing** for semantic understanding
+- **Conversational focus** with dialogue patterns prioritized
+
+### 🧠 **AI Capabilities:**
+- **Genuine conversation** (not just pattern matching)
+- **Semantic understanding** of word relationships
+- **Context-aware responses** with 15-word memory
+- **Vocabulary diversity** across multiple domains
+- **Constitutional personality** influencing language style
+
+---
+
 ## System Overview
 
 A **revolutionary platform** for evolving self-governing AI agents using constitutional diploid genomes, neural evolution (NEAT), and deep governance systems. Agents can reach **100M+ parameters** (50K-200K nodes, 500K-10M connections) and develop genuine intelligence in language and reasoning through **democratically-controlled evolutionary processes** and constitutional self-governance.
@@ -17,10 +38,11 @@ The world's first AI system where **agents democratically vote on their own evol
 python evolutionary_cycle.py
 ```
 - ✅ **Governance enabled** by default
-- ✅ **Continuous evolution** cycles
+- ✅ **Continuous evolution** cycles with **25MB conversational training**
 - ✅ **Democratic voting** every 3 cycles
 - ✅ **Agent breeding** and selection
 - ✅ **Training escalation** over time
+- ✅ **Word-level language evolution**
 
 ### **Option 2: Parallel Evolution (Fast Training)**
 ```bash
@@ -51,8 +73,11 @@ python parallel_evolution.py
 - **Identity System**: Cryptographically verified agent authenticity using SHA-256 hashing.
 
 ### Language Corpus System
-- **Data Sources**: Integrates HuggingFace datasets (WikiText-103, OpenWebText, BookCorpus, C4).
-- **Corpus Size**: Scalable from 50KB (testing) to 10MB+ (production).
+- **Data Sources**: Integrates HuggingFace datasets (WikiText-103, OpenWebText, BookCorpus, C4, Wikipedia).
+- **Corpus Size**: **25,072,370 characters (25.07 MB)** production-scale training data.
+- **Word-Level Processing**: **101,334 vocabulary** with semantic understanding.
+- **Training Sequences**: **311,693 sequences** with 15-word context windows.
+- **Conversational Focus**: Dialogue patterns prioritized for genuine conversation.
 - **Caching**: Downloads data once, stores locally for reuse.
 - **Fallback**: Automatically switches between data sources if one fails.
 

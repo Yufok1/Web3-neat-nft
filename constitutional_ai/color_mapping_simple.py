@@ -8,7 +8,8 @@ from typing import Dict, Any, Tuple
 
 def traits_to_simple_color(traits: Dict[str, Any]) -> str:
     """
-    Convert traits to a simple hex color using hash-based approach.
+    Convert traits to a simple hex color based on actual trait values.
+    Colors reflect the agent's personality and capabilities.
 
     Args:
         traits: Dictionary of trait names to values
@@ -16,23 +17,79 @@ def traits_to_simple_color(traits: Dict[str, Any]) -> str:
     Returns:
         Hex color string (e.g., "#FF5733")
     """
-    # Convert traits to a stable string representation
-    trait_str = str(sorted(traits.items()))
+    # Map traits to RGB components based on their psychological meaning
 
-    # Use hash to generate RGB values
-    hash_val = abs(hash(trait_str))
+    # Red component: Leadership, Autonomy, Risk-taking
+    red_traits = ["Leadership", "Autonomy", "RiskTolerance", "InnovationDrive"]
+    red_values = [traits.get(trait, 0) for trait in red_traits if trait in traits]
+    if red_values:
+        # Normalize to 0-1 (assuming most traits are 0-5 range)
+        red_normalized = sum(min(1.0, val / 5.0) for val in red_values) / len(
+            red_values
+        )
+        r = int(64 + (red_normalized * 191))  # Range: 64-255
+    else:
+        r = 128
 
-    # Extract RGB components from hash
-    r = (hash_val >> 16) & 0xFF
-    g = (hash_val >> 8) & 0xFF
-    b = hash_val & 0xFF
+    # Green component: Empathy, Cooperation, Emotional Intelligence
+    green_traits = [
+        "Empathy",
+        "Cooperation",
+        "EmotionalIntelligence",
+        "Trustworthiness",
+    ]
+    green_values = [traits.get(trait, 0) for trait in green_traits if trait in traits]
+    if green_values:
+        green_normalized = sum(min(1.0, val / 5.0) for val in green_values) / len(
+            green_values
+        )
+        g = int(64 + (green_normalized * 191))  # Range: 64-255
+    else:
+        g = 128
 
-    # Ensure colors are not too dark (minimum brightness)
-    r = max(r, 64)
-    g = max(g, 64)
-    b = max(b, 64)
+    # Blue component: Analytical thinking, Stability, Pattern Recognition
+    blue_traits = [
+        "CriticalThinking",
+        "Stability",
+        "PatternRecognition",
+        "CausalReasoning",
+    ]
+    blue_values = [traits.get(trait, 0) for trait in blue_traits if trait in traits]
+    if blue_values:
+        blue_normalized = sum(min(1.0, val / 5.0) for val in blue_values) / len(
+            blue_values
+        )
+        b = int(64 + (blue_normalized * 191))  # Range: 64-255
+    else:
+        b = 128
+
+    # Ensure RGB values are within valid range
+    r = max(0, min(255, r))
+    g = max(0, min(255, g))
+    b = max(0, min(255, b))
 
     return f"#{r:02X}{g:02X}{b:02X}"
+
+
+def deterministic_hash(s: str) -> int:
+    """
+    Deterministic hash function that produces consistent results
+    across sessions.
+
+    Args:
+        s: String to hash
+
+    Returns:
+        64-bit hash value
+    """
+    # DJB2 hash algorithm - deterministic and fast
+    hash_val = 5381
+    for char in s:
+        # hash_val * 33 + ord(char)
+        hash_val = ((hash_val << 5) + hash_val) + ord(char)
+        hash_val &= 0xFFFFFFFFFFFFFFFF  # Keep it to 64 bits
+
+    return hash_val
 
 
 def get_simple_color_description(hex_color: str) -> str:

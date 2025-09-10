@@ -4,8 +4,11 @@ Top Agents Display - Show agents with breeding commands
 Usage: python top_agents.py
 """
 
-import subprocess
-import sys
+from constitutional_ai.persistence import list_all_agents, load_agent
+from constitutional_ai.color_mapping_simple import (
+    traits_to_simple_color,
+    get_simple_color_description,
+)
 
 
 def show_top_agents():
@@ -13,136 +16,121 @@ def show_top_agents():
     print("TOP 5 CONSTITUTIONAL AGENTS WITH TRAITS")
     print("=" * 60)
 
-    # Use the working agent browser to list agents
     try:
-        list_result = subprocess.run(
-            [sys.executable, "agent_browser.py", "list"],
-            capture_output=True,
-            text=True,
-            cwd="C:/Users/Jeff Towers/projects/web3-neat-nft",
-        )
+        # Get all agent IDs
+        agent_ids = list_all_agents()
 
-        if list_result.returncode != 0:
-            print("Error running agent browser list")
+        if not agent_ids:
+            print(
+                "❌ No agents found. Run evolutionary_cycle.py or "
+                "parallel_evolution.py first."
+            )
             return
 
-        # Parse agent IDs from list output
-        agent_ids = []
-        agent_info = []
+        print(f"📊 Found {len(agent_ids)} agents\n")
 
-        for line in list_result.stdout.strip().split("\n"):
-            if "Agent:" in line and "..." in line:
-                # Extract: "1. Agent: 231466cbedc6817a..."
-                parts = line.split("Agent: ")
-                if len(parts) > 1:
-                    agent_part = parts[1].split("...")[0]
-                    agent_ids.append(agent_part)
+        # Load and analyze all agents
+        agents_data = []
+        for agent_id in agent_ids:
+            try:
+                agent = load_agent(agent_id)
+                if agent:
+                    fitness = 0.0
+                    if agent.capabilities and "language" in agent.capabilities:
+                        lang_cap = agent.capabilities["language"]
+                        fitness = getattr(lang_cap, "final_fitness", 0.0)
 
-                    # Extract basic info from list output
-                    rank = line.split(".")[0].strip()
-                    visual_dna = ""
-                    fitness = ""
+                    # Get visual DNA
+                    if hasattr(agent, "identity_bundle"):
+                        identity_obj = agent.identity_bundle
+                        traits = identity_obj.constitution_result.constitution
+                        visual_dna = traits_to_simple_color(traits)
 
-                    # Look for Visual DNA and fitness in next few lines
-                    lines = list_result.stdout.strip().split("\n")
-                    idx = lines.index(line)
-                    if idx + 1 < len(lines) and "Visual DNA:" in lines[idx + 1]:
-                        visual_dna = lines[idx + 1].split("Visual DNA: ")[1].split()[0]
+                        agents_data.append(
+                            {
+                                "id": agent_id,
+                                "fitness": fitness,
+                                "traits": traits,
+                                "visual_dna": visual_dna,
+                            }
+                        )
+            except Exception as e:
+                print(f"⚠️  Error loading agent {agent_id[:12]}: {e}")
+                continue
 
-                    # Look for fitness in format: "Best: base (fitness: 0.560)"
-                    for i in range(1, 6):  # Check next 5 lines
-                        if idx + i < len(lines):
-                            line_check = lines[idx + i]
-                            if "(fitness:" in line_check:
-                                fitness_part = line_check.split("(fitness: ")[1]
-                                fitness = fitness_part.split(")")[0]
-                                break
+        if not agents_data:
+            print("❌ No agents could be loaded successfully.")
+            return
 
-                    agent_info.append(
-                        {
-                            "rank": rank,
-                            "id": agent_part,
-                            "visual_dna": visual_dna,
-                            "fitness": fitness,
-                        }
-                    )
+        # Sort by fitness (highest first)
+        agents_data.sort(key=lambda x: x["fitness"], reverse=True)
 
-        print(f"Found {len(agent_ids)} agents\n")
+        # Display top 5 agents with traits
+        for i, agent_data in enumerate(agents_data[:5]):
+            agent_id = agent_data["id"]
+            fitness = agent_data["fitness"]
+            traits = agent_data["traits"]
+            visual_dna = agent_data["visual_dna"]
+            color_desc = get_simple_color_description(visual_dna)
 
-        # Get detailed traits for each agent
-        for i, info in enumerate(agent_info[:5]):
-            print(f"{info['rank']}. Agent: {info['id'][:12]}...")
-            print(f"   Visual DNA: {info['visual_dna']} | Fitness: {info['fitness']}")
-
-            # Get detailed constitutional traits
-            show_result = subprocess.run(
-                [sys.executable, "agent_browser.py", "show", info["id"][:8]],
-                capture_output=True,
-                text=True,
-                cwd="C:/Users/Jeff Towers/projects/web3-neat-nft",
+            print(f"{i+1}. Agent: {agent_id[:12]}...")
+            print(
+                f"   Visual DNA: {visual_dna} ({color_desc}) | "
+                f"Fitness: {fitness:.3f}"
             )
 
-            if show_result.returncode == 0:
-                # Parse constitutional traits from show output
-                lines = show_result.stdout.strip().split("\n")
-                traits_section = False
-                traits = []
-
-                for line in lines:
-                    if "Constitutional Traits" in line:
-                        traits_section = True
-                        continue
-                    elif traits_section and line.strip().startswith("Capabilities"):
-                        break
-                    elif traits_section and ":" in line:
-                        # Parse trait line: "  Perception: 5.19"
-                        trait_line = line.strip()
-                        if trait_line and ":" in trait_line:
-                            trait_name, trait_value = trait_line.split(":", 1)
-                            traits.append(f"{trait_name.strip()}={trait_value.strip()}")
-
-                # Display traits in rows of 3
-                print("   Constitutional Traits:")
-                for j in range(0, len(traits), 3):
-                    trait_row = traits[j : j + 3]
-                    trait_str = " | ".join(trait_row)
-                    print(f"     {trait_str}")
-
-            print()  # Blank line between agents
+            # Show ALL traits in alphabetical order
+            sorted_traits = sorted(traits.items())
+            print("   All Traits:")
+            for name, value in sorted_traits:
+                if isinstance(value, (int, float)):
+                    print(f"     {name}: {value:.3f}")
+                else:
+                    print(f"     {name}: {value}")
+            print()
 
         # Show breeding and training commands
-        if len(agent_ids) >= 2:
-            print("BREEDING COMMANDS (Top Performers):")
-            print("-" * 35)
+        if len(agents_data) >= 2:
+            top1 = agents_data[0]["id"]
+            top2 = agents_data[1]["id"]
 
-            # Show top 3 breeding combinations
-            for i in range(min(3, len(agent_ids))):
-                for j in range(i + 1, min(3, len(agent_ids))):
-                    id1 = agent_ids[i][:8]
-                    id2 = agent_ids[j][:8]
-                    print(f"python agent_browser.py breed {id1} {id2}")
-
-            print("\\nTRAINING COMMANDS (Language Focus):")
-            print("-" * 32)
-
-            # Show training commands for all agents
-            for info in agent_info[:5]:
-                short_id = info["id"][:8]
-                print(
-                    f"python agent_browser.py train {short_id} language --generations 5"
-                )
+            print("🧬 BREEDING COMMANDS:")
+            print(
+                f"python agent_browser.py breed {top1[:12]} "
+                f"{top2[:12]} --count 3 --generations 5"
+            )
+            print()
+            print("🎯 TRAINING COMMANDS:")
+            print(
+                f"python agent_browser.py train {top1[:12]} "
+                f"language --generations 10"
+            )
+            print(
+                f"python agent_browser.py train {top2[:12]} " f"coding --generations 8"
+            )
+            print()
+            print("📊 GOVERNANCE COMMANDS:")
+            print("python test_deep_governance.py")
+            print()
+            print("🚀 EVOLUTION COMMANDS:")
+            print("python evolutionary_cycle.py  # Continuous evolution")
+            print("python parallel_evolution.py --governance  # Parallel")
 
         else:
-            print("Error running agent browser:")
-            print(list_result.stderr)
+            print("📝 Need at least 2 agents for breeding. Run:")
+            print("python parallel_evolution.py")
+            print("python evolutionary_cycle.py")
 
     except Exception as e:
-        print(f"Error: {e}")
-        print("\nFallback - use these commands manually:")
+        print(f"❌ Error: {e}")
+        print("\n🔧 Troubleshooting:")
+        print("1. Ensure agents directory exists with agent files")
+        print("2. Check that constitutional_ai modules are properly installed")
+        print("3. Run: python quick_test.py to verify system")
+        print("\n📋 Manual commands:")
         print("python agent_browser.py list")
         print("python agent_browser.py show [agent_id]")
         print("python agent_browser.py breed [id1] [id2]")
-        print("python agent_browser.py train [id] language --generations 5")
 
 
 if __name__ == "__main__":
